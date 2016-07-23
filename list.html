@@ -1,0 +1,27 @@
+<html>
+<head>
+<style>
+a {
+    display: block;
+}
+</style>
+</head>
+<body>
+<script>
+function test(data) {
+    for (var i = data.data.length-1; i > 0; --i) {
+        var file = data.data[i];
+        var anchor = document.createElement("A");
+        anchor.setAttribute("href", "player.html#https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/" + file.path);
+        anchor.textContent = file.name;
+        document.body.appendChild(anchor);
+    }
+}
+var script = document.createElement("SCRIPT");
+
+script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/game-architecture?callback=test");
+document.body.appendChild(script);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,239 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+.titleRow {
+    display: flex;
+    flex-direction: horizontal;
+    border: 1px solid black;
+    background: grey;
+    color: white;
+}
+
+.title {
+    flex-grow: 1;
+}
+
+.middleContainer {
+    display: flex;
+    flex-direction: horizontal;
+}
+
+.marksContainer {
+    display: inline-block;
+    width: 300px;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    flex-shrink: 0;
+}
+
+.mark {
+    display: block;
+    padding: 5px;
+    border: 1px solid black;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.mark.passed {
+    background: purple;
+}
+
+.videoContainer {
+    flex-grow: 1;
+    flex-shrink: 1;
+    display: inline-block;
+    overflow: hidden;
+}
+
+</style>
+</head>
+<body>
+
+<div class="playerContainer">
+    <div class="titleRow">
+        <span class="title"></span>
+        <span class="author"></span>
+    </div>
+    <div class="middleContainer">
+        <div class="marksContainer">
+        </div>
+        <div class="videoContainer">
+            <div id="player"></div>
+        </div>
+    <div>
+    <div class="footer">
+    </div>
+</div>
+<script>
+var annotations = null;
+var player = null;
+var playing = false;
+var youtubePlayerReady = false;
+function onYouTubeIframeAPIReady() {
+    youtubePlayerReady = true;
+    initVideo();
+}
+</script>
+<script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+<script>
+var hash = location.hash;
+var annotationsFileLocation = null;
+if (hash && hash.length > 1 && hash[0] == "#") {
+    annotationsFileLocation = hash.slice(1);
+} else {
+    document.write("No file specified");
+}
+
+if (annotationsFileLocation) {
+    annotations = {
+        markers: []
+    };
+
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function() {
+        var contents = xhr.response;
+
+        var lines = contents.split("\n");
+        var mode = "none";
+        for (var i = 0; i < lines.length; ++i) {
+            var line = lines[i];
+            if (line == "---") {
+                mode = "none";
+            } else if (line.startsWith("title:")) {
+                annotations.title = line.slice(8).replace(/"/g, "");
+            } else if (line.startsWith("videoId:")) {
+                annotations.videoId = line.slice(10).replace(/"/g, "");
+            } else if (line.startsWith("author:")) {
+                annotations.author = line.slice(9).replace(/"/g, ""); // Miblo, where's the author field?
+            } else if (line.startsWith("markers")) {
+                mode = "markers";
+            } else if (mode == "markers") {
+                var match = line.match(/"((\d+):)?(\d+):(\d+)": "(.+)"/);
+                var mark = {
+                    hours: (match[2] ? parseInt(match[2], 10) : 0),
+                    minutes: parseInt(match[3], 10),
+                    seconds: parseInt(match[4], 10),
+                    text: match[5].replace(/\\"/g, "\"")
+                }
+                annotations.markers.push(mark);
+            }
+        }
+
+        generatePlayer(annotations);
+    });
+
+    xhr.addEventListener("error", function() {
+        document.write("Could not load annotations file");
+    });
+    xhr.open("GET", annotationsFileLocation);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.send();
+}
+
+function generatePlayer(annotations) {
+    var playerContainer = document.querySelector(".playerContainer");
+    var title = playerContainer.querySelector(".title");
+    var author = playerContainer.querySelector(".author");
+    var marksContainer = playerContainer.querySelector(".marksContainer");
+
+    author.textContent = "Annotations by: " + (annotations.author || "Probably Miblo");
+    title.textContent = annotations.title;
+
+    for (var i = 0; i < annotations.markers.length; ++i) {
+        var mark = annotations.markers[i];
+        var markEl = document.createElement("DIV");
+        markEl.classList.add("mark");
+        markEl.textContent = markTime(mark) + " " + mark.text;
+        markEl.addEventListener("click", (function(marker) {
+            return function() {
+                if (player) {
+                    player.seekTo(toSeconds(marker), true);
+                }
+            }
+        })(mark));
+        mark.el = markEl;
+        marksContainer.appendChild(markEl);
+    }
+
+    initVideo();
+}
+
+function markTime(mark) {
+    var markTime = "(";
+    if (mark.hour > 0) {
+        markTime += padTimeComponent(mark.hours) + ":";
+    }
+
+    markTime += padTimeComponent(mark.minutes) + ":" + padTimeComponent(mark.seconds) + ")";
+
+    return markTime;
+}
+
+function padTimeComponent(component) {
+    return (component < 10 ? "0" + component : component);
+}
+
+function onPlayerReady() {
+}
+
+function onPlayerStateChange(ev) {
+    if (ev.data == 1) {
+        playing = true;
+    } else {
+        playing = false;
+    }
+}
+
+function onPlayerPlaybackRateChange() {
+}
+
+function initVideo() {
+    if (youtubePlayerReady) {
+        var playerContainer = document.querySelector(".playerContainer");
+        var videoContainer = playerContainer.querySelector(".videoContainer");
+        var marksContainer = playerContainer.querySelector(".marksContainer");
+        marksContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+        player = new YT.Player("player", {
+            videoId: annotations.videoId,
+            width: videoContainer.offsetWidth,
+            height: videoContainer.offsetWidth / 16 * 9,
+            events: {
+                "onReady": onPlayerReady,
+                "onStateChange": onPlayerStateChange,
+                "onPlaybackRateChange": onPlayerPlaybackRateChange
+            }
+        });
+        window.addEventListener("resize", function() {
+            player.setSize(videoContainer.offsetWidth, videoContainer.offsetWidth / 16 * 9);
+            marksContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+        });
+    }
+}
+
+function update() {
+    if (playing) {
+        var time = player.getCurrentTime();
+        for (var i = 0; i < annotations.markers.length; ++i) {
+            var mark = annotations.markers[i];
+            var markTimeInSeconds = toSeconds(mark);
+            if (markTimeInSeconds < time) {
+                mark.el.classList.add("passed");
+            } else {
+                mark.el.classList.remove("passed");
+            }
+        }
+    }
+
+    requestAnimationFrame(update);
+}
+
+function toSeconds(marker) {
+    return marker.hours * 60 * 60 + marker.minutes * 60 + marker.seconds;
+}
+
+update();
+
+</script>
+</body>
+</html>
