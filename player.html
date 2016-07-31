@@ -223,15 +223,19 @@ var speed = 1;
 var currentTime = 0;
 var lastFrameTime = 0;
 var scrollTo = -1;
+var playerReady = false;
 
 function onPlayerReady() {
-    for (var i = 0; i < markers.length; ++i) {
-        if (markers[i].endTime === null) {
-            markers[i].endTime = player.getDuration();
+    setTimeout(function() {
+        for (var i = 0; i < markers.length; ++i) {
+            if (markers[i].endTime === null) {
+                markers[i].endTime = player.getDuration();
+            }
         }
-    }
 
-    updateSize();
+        updateSize();
+    }, 0);
+    playerReady = true;
 }
 
 function onPlayerStateChange(ev) {
@@ -265,7 +269,7 @@ function initVideo() {
             markers.push(marker);
             markerEls[i].addEventListener("click", (function(marker) {
                 return function() {
-                    if (player) {
+                    if (playerReady) {
                         player.seekTo(marker.timestamp, true);
                         if (!playing) {
                             player.playVideo();
