@@ -226,13 +226,6 @@ var scrollTo = -1;
 var playerReady = false;
 
 function onPlayerReady(ev) {
-    
-    for (var i = 0; i < markers.length; ++i) {
-        if (markers[i].endTime === null) {
-            markers[i].endTime = ev.target.getDuration();
-        }
-    }
-
     updateSize();
     
     playerReady = true;
@@ -309,6 +302,9 @@ function setProgress(time) {
     var newCurrentMarker = currentMarker;
     for (var i = 0; i < markers.length; ++i) {
         var marker = markers[i];
+        if (markers.endTime === null) {
+            markers.endTime = ev.target.getDuration();
+        }
         if (marker.timestamp <= time && marker.endTime > time) {
             marker.progress.style.width = ((time - marker.timestamp) / (marker.endTime - marker.timestamp)) * 100 + "%";
             if (currentMarker != marker) {
