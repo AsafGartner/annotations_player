@@ -225,16 +225,16 @@ var lastFrameTime = 0;
 var scrollTo = -1;
 var playerReady = false;
 
-function onPlayerReady() {
-    setTimeout(function() {
-        for (var i = 0; i < markers.length; ++i) {
-            if (markers[i].endTime === null) {
-                markers[i].endTime = player.getDuration();
-            }
+function onPlayerReady(ev) {
+    
+    for (var i = 0; i < markers.length; ++i) {
+        if (markers[i].endTime === null) {
+            markers[i].endTime = ev.target.getDuration();
         }
+    }
 
-        updateSize();
-    }, 100);
+    updateSize();
+    
     playerReady = true;
 }
 
