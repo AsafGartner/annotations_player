@@ -2,12 +2,18 @@
 <head>
 <meta charset="UTF-8">
 <style>
+body {
+    font-family: sans-serif;
+    background-color: #222222;
+}
+
 .titleRow {
     display: flex;
     flex-direction: horizontal;
     border: 1px solid black;
     background: grey;
     color: white;
+    padding: 7px;
 }
 
 .title {
@@ -21,21 +27,53 @@
 
 .marksContainer {
     display: inline-block;
-    width: 300px;
     overflow-y: scroll;
     overflow-x: hidden;
     flex-shrink: 0;
 }
 
-.mark {
-    display: block;
-    padding: 5px;
-    border: 1px solid black;
-    font-size: 14px;
-    cursor: pointer;
+.marker {
+    position :relative;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
-.mark.passed {
+.marker:hover .content {
+    background-color: #222;
+}
+
+.marker .content, .marker .completed {
+    background-color: #161616;
+    color: #8A877D;
+}
+
+.marker.current .content {
+    color: #B57714;
+}
+
+.marker .content, .marker .completed {
+    width: 300px;
+    display: block;
+    padding: 5px;
+    font-size: 14px;
+    cursor: pointer;
+    word-wrap: break-word;
+}
+
+.marker .completed {
+    background-color: #8B3D23;
+    color: black;
+}
+
+.marker .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0%;
+    overflow: hidden;
+}
+
+.marker.passed {
     background: purple;
 }
 
@@ -66,7 +104,6 @@
     </div>
 </div>
 <script>
-var annotations = null;
 var player = null;
 var playing = false;
 var youtubePlayerReady = false;
@@ -77,6 +114,7 @@ function onYouTubeIframeAPIReady() {
 </script>
 <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
 <script>
+// Page generation stuff (to be removed once this is rendered by the server)
 var hash = location.hash;
 var annotationsFileLocation = null;
 if (hash && hash.length > 1 && hash[0] == "#") {
@@ -86,7 +124,7 @@ if (hash && hash.length > 1 && hash[0] == "#") {
 }
 
 if (annotationsFileLocation) {
-    annotations = {
+    var annotations = {
         markers: []
     };
 
@@ -111,9 +149,7 @@ if (annotationsFileLocation) {
             } else if (mode == "markers") {
                 var match = line.match(/"((\d+):)?(\d+):(\d+)": "(.+)"/);
                 var mark = {
-                    hours: (match[2] ? parseInt(match[2], 10) : 0),
-                    minutes: parseInt(match[3], 10),
-                    seconds: parseInt(match[4], 10),
+                    totalTime: (match[2] ? parseInt(match[2], 10) : 0) * 60 * 60 + parseInt(match[3], 10) * 60 + parseInt(match[4], 10),
                     text: match[5].replace(/\\"/g, "\"")
                 }
                 annotations.markers.push(mark);
@@ -141,31 +177,37 @@ function generatePlayer(annotations) {
     title.textContent = annotations.title;
 
     for (var i = 0; i < annotations.markers.length; ++i) {
-        var mark = annotations.markers[i];
-        var markEl = document.createElement("DIV");
-        markEl.classList.add("mark");
-        markEl.textContent = markTime(mark) + " " + mark.text;
-        markEl.addEventListener("click", (function(marker) {
-            return function() {
-                if (player) {
-                    player.seekTo(toSeconds(marker), true);
-                }
-            }
-        })(mark));
-        mark.el = markEl;
-        marksContainer.appendChild(markEl);
+        var marker = annotations.markers[i];
+        var markerEl = document.createElement("DIV");
+        var contentEl = document.createElement("DIV");
+        var progressEl = document.createElement("DIV");
+        var completedEl = document.createElement("DIV");
+        markerEl.classList.add("marker");
+        contentEl.classList.add("content");
+        progressEl.classList.add("progress");
+        completedEl.classList.add("completed");
+        markerEl.setAttribute("data-timestamp", marker.totalTime);
+        contentEl.textContent = markerTime(marker) + " " + marker.text;
+        completedEl.textContent = markerTime(marker) + " " + marker.text;
+        markerEl.appendChild(contentEl);
+        markerEl.appendChild(progressEl);
+        progressEl.appendChild(completedEl);
+        marksContainer.appendChild(markerEl);
     }
 
     initVideo();
 }
 
-function markTime(mark) {
+function markerTime(marker) {
     var markTime = "(";
-    if (mark.hour > 0) {
-        markTime += padTimeComponent(mark.hours) + ":";
+    var hours = Math.floor(marker.totalTime / 60 / 60);
+    var minutes = Math.floor(marker.totalTime / 60) % 60;
+    var seconds = marker.totalTime % 60;
+    if (hours > 0) {
+        markTime += padTimeComponent(hours) + ":";
     }
 
-    markTime += padTimeComponent(mark.minutes) + ":" + padTimeComponent(mark.seconds) + ")";
+    markTime += padTimeComponent(minutes) + ":" + padTimeComponent(seconds) + ")";
 
     return markTime;
 }
@@ -174,22 +216,64 @@ function padTimeComponent(component) {
     return (component < 10 ? "0" + component : component);
 }
 
+// Actual player stuff
+var markers = [];
+var currentMarker = null;
+var speed = 1;
+var currentTime = 0;
+var lastFrameTime = 0;
+var scrollTo = -1;
+
 function onPlayerReady() {
+    for (var i = 0; i < markers.length; ++i) {
+        if (markers[i].endTime === null) {
+            markers[i].endTime = player.getDuration();
+        }
+    }
+
+    updateSize();
 }
 
 function onPlayerStateChange(ev) {
     if (ev.data == 1) {
         playing = true;
+        currentTime = player.getCurrentTime();
+    } else if (ev.data == 2 || ev.data == 3) {
+        playing = false;
+        currentTime = player.getCurrentTime();
+        setProgress(currentTime);
     } else {
         playing = false;
     }
 }
 
-function onPlayerPlaybackRateChange() {
+function onPlayerPlaybackRateChange(ev) {
+    speed = ev.data;
 }
 
 function initVideo() {
     if (youtubePlayerReady) {
+        markers = [];
+        var markerEls = document.querySelectorAll(".playerContainer .marker");
+        for (var i = 0; i < markerEls.length; ++i) {
+            var marker = {
+                timestamp: parseInt(markerEls[i].getAttribute("data-timestamp")),
+                endTime: (i < markerEls.length - 1 ? parseInt(markerEls[i+1].getAttribute("data-timestamp")) : null),
+                el: markerEls[i],
+                progress: markerEls[i].querySelector(".progress")
+            };
+            markers.push(marker);
+            markerEls[i].addEventListener("click", (function(marker) {
+                return function() {
+                    if (player) {
+                        player.seekTo(marker.timestamp, true);
+                        if (!playing) {
+                            player.playVideo();
+                        }
+                    }
+                }
+            })(marker));
+        }
         var playerContainer = document.querySelector(".playerContainer");
         var videoContainer = playerContainer.querySelector(".videoContainer");
         var marksContainer = playerContainer.querySelector(".marksContainer");
@@ -205,33 +289,62 @@ function initVideo() {
             }
         });
         window.addEventListener("resize", function() {
-            player.setSize(videoContainer.offsetWidth, videoContainer.offsetWidth / 16 * 9);
-            marksContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+            updateSize();
         });
     }
 }
 
-function update() {
-    if (playing) {
-        var time = player.getCurrentTime();
-        for (var i = 0; i < annotations.markers.length; ++i) {
-            var mark = annotations.markers[i];
-            var markTimeInSeconds = toSeconds(mark);
-            if (markTimeInSeconds < time) {
-                mark.el.classList.add("passed");
-            } else {
-                mark.el.classList.remove("passed");
+function updateSize() {
+    var videoContainer = document.querySelector(".playerContainer .videoContainer");
+    var marksContainer = document.querySelector(".playerContainer .marksContainer");
+    player.setSize(videoContainer.offsetWidth, videoContainer.offsetWidth / 16 * 9);
+    marksContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+}
+
+function setProgress(time) {
+    var newCurrentMarker = currentMarker;
+    for (var i = 0; i < markers.length; ++i) {
+        var marker = markers[i];
+        if (marker.timestamp <= time && marker.endTime > time) {
+            marker.progress.style.width = ((time - marker.timestamp) / (marker.endTime - marker.timestamp)) * 100 + "%";
+            if (currentMarker != marker) {
+                marker.el.classList.add("current");
+                newCurrentMarker = marker;
             }
         }
+    }
+
+    if (currentMarker != newCurrentMarker) {
+        if (currentMarker) {
+            currentMarker.progress.style.width = "0%";
+            currentMarker.el.classList.remove("current");
+        }
+        currentMarker = newCurrentMarker;
+        if (currentMarker) {
+            scrollTo = currentMarker.el.offsetTop + currentMarker.el.offsetHeight/2.0;
+        }
+    }
+}
+
+function update() {
+    var now = performance.now();
+    var delta = now - lastFrameTime;
+    lastFrameTime = now;
+    if (playing) {
+        currentTime += delta / 1000.0 * speed;
+        setProgress(currentTime);
+    }
+
+    if (scrollTo >= 0) {
+        var marksContainer = document.querySelector(".playerContainer .marksContainer");
+        marksContainer.scrollTop = scrollTo - marksContainer.offsetHeight/2.0;
+        scrollTo = -1;
     }
 
     requestAnimationFrame(update);
 }
 
-function toSeconds(marker) {
-    return marker.hours * 60 * 60 + marker.minutes * 60 + marker.seconds;
-}
-
+lastFrameTime = performance.now();
 update();
 
 </script>
