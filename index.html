@@ -1,11 +1,6 @@
 <html>
 <head>
 <title>HMH Episode List</title>
-<style>
-a {
-    display: block;
-}
-</style>
 </head>
 <body>
 <script>
@@ -16,6 +11,7 @@ function test(data) {
         anchor.setAttribute("href", "player.html#https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/" + file.path);
         anchor.textContent = file.name;
         document.body.appendChild(anchor);
+        document.body.appendChild(document.createElement("BR"));
     }
 }
 var script = document.createElement("SCRIPT");
