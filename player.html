@@ -106,6 +106,7 @@ body {
 <script>
 var player = null;
 var playing = false;
+var domReady = false;
 var youtubePlayerReady = false;
 function onYouTubeIframeAPIReady() {
     youtubePlayerReady = true;
@@ -195,6 +196,7 @@ function generatePlayer(annotations) {
         marksContainer.appendChild(markerEl);
     }
 
+    domReady = true;
     initVideo();
 }
 
@@ -225,16 +227,9 @@ var lastFrameTime = 0;
 var scrollTo = -1;
 var playerReady = false;
 
-function onPlayerReady() {
-    setTimeout(function() {
-        for (var i = 0; i < markers.length; ++i) {
-            if (markers[i].endTime === null) {
-                markers[i].endTime = player.getDuration();
-            }
-        }
-
-        updateSize();
-    }, 0);
+function onPlayerReady(ev) {
+    updateSize();
+    
     playerReady = true;
 }
 
@@ -256,7 +251,7 @@ function onPlayerPlaybackRateChange(ev) {
 }
 
 function initVideo() {
-    if (youtubePlayerReady) {
+    if (youtubePlayerReady && domReady) {
         markers = [];
         var markerEls = document.querySelectorAll(".playerContainer .marker");
         for (var i = 0; i < markerEls.length; ++i) {
@@ -309,6 +304,9 @@ function setProgress(time) {
     var newCurrentMarker = currentMarker;
     for (var i = 0; i < markers.length; ++i) {
         var marker = markers[i];
+        if (markers.endTime === null) {
+            markers.endTime = ev.target.getDuration();
+        }
         if (marker.timestamp <= time && marker.endTime > time) {
             marker.progress.style.width = ((time - marker.timestamp) / (marker.endTime - marker.timestamp)) * 100 + "%";
             if (currentMarker != marker) {
