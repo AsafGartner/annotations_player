@@ -132,9 +132,9 @@ function addFile(name, filepath, idx) {
         for (var i = 0; i < lines.length; ++i) {
             var line = lines[i];
             if (line.startsWith("title:")) {
-                title = line.slice(8).replace(/"/g, "");
+                title = line.slice(7).replace(/"/g, "");
             } else if (line.startsWith("videoId:")) {
-                videoId = line.slice(10).replace(/"/g, "");
+                videoId = line.slice(9).replace(/"/g, "");
             }
 
             if (title && videoId) {
