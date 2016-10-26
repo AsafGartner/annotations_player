@@ -64,6 +64,21 @@ body {
     margin: 0;
 }
 
+.episodeList {
+    margin: 0 0 0 10px;
+    color: rgba(38, 139, 210, 1);
+    text-decoration: none;
+}
+
+.episodeList:visited {
+    color: rgba(38, 139, 210, 1);
+    text-decoration: none;
+}
+
+.episodeList:hover {
+    text-decoration: underline;
+}
+
 .titleRow {
     display: flex;
     flex-direction: horizontal;
@@ -124,6 +139,7 @@ body {
     <div class="titleRow">
         <span class="title"></span>
         <span class="author"></span>
+        <a class="episodeList" href="index.html">All episodes</a>
     </div>
     <div class="middleContainer">
         <div class="videoContainer">

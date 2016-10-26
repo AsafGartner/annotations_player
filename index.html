@@ -1,22 +1,200 @@
 <html>
 <head>
+<meta charset="UTF-8">
 <title>HMH Episode List</title>
+<style>
+body {
+    padding: 10px;
+    margin: 0;
+    background-color: #222;
+    font-family: sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#spinner {
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    top: 0;
+    right: 0;
+    display: none;
+}
+
+.episodeContainer {
+    display: inline-block;
+    margin: 15px;
+    width: 320px;
+    overflow: hidden;
+    vertical-align: top;
+    position: relative;
+    text-decoration: none;
+}
+
+.episodeContainer img {
+    display: block;
+    width: 320px;
+    height: 180px;
+    visibility: hidden;
+}
+
+.episodeContainer img.spinner {
+    display: block;
+    visibility: visible;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    left: 135px;
+    top: 55px;
+}
+
+.episodeContainer div {
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #D4D0C2;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 320px;
+    transition: background-color 100ms ease-in-out;
+}
+
+.episodeContainer:hover div {
+    background: rgba(50, 50, 50, 1);
+}
+</style>
 </head>
 <body>
+<img id="spinner" src="spin.gif"></img>
+<div id="itemsContainer"></div>
+
 <script>
-function test(data) {
-    for (var i = data.data.length-1; i >= 0; --i) {
-        var file = data.data[i];
-        var anchor = document.createElement("A");
-        anchor.setAttribute("href", "player.html#https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/" + file.path);
-        anchor.textContent = file.name;
-        document.body.appendChild(anchor);
-        document.body.appendChild(document.createElement("BR"));
+var itemsToLoad = 0;
+var itemsLoaded = 0;
+
+var fileList = [];
+
+function addItemToLoad() {
+    itemsToLoad++;
+    document.getElementById("spinner").style.display = "block";
+}
+
+function itemLoaded() {
+    itemsLoaded++;
+    if (itemsLoaded == itemsToLoad) {
+        document.getElementById("spinner").style.display = "none";
     }
 }
-var script = document.createElement("SCRIPT");
 
-script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/game-architecture?callback=test");
+function fileListLoaded(data) {
+    itemLoaded();
+    var files = [];
+    for (var i = data.data.length-1; i >= 0; --i) {
+        var file = data.data[i];
+        files.push({
+            name: file.name,
+            path: "https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/" + file.path
+        });
+    }
+    addFilesToList(files);
+}
+
+function addFilesToList(files) {
+    fileList = fileList.concat(files);
+    if (itemsLoaded == itemsToLoad) {
+        fileList = fileList.sort(function(a, b) {
+            return a.name.localeCompare(b.name);
+        });
+
+        fileList.reverse();
+
+        for (var i = 0; i < fileList.length; ++i) {
+            renderEpisode(fileList[i].name, fileList[i].path);
+            addFile(fileList[i].name, fileList[i].path, i);
+        }
+    }
+}
+
+function addFile(name, filepath, idx) {
+    var xhr = new XMLHttpRequest();
+    xhr.addEventListener("load", function() {
+        var contents = xhr.response;
+
+        var lines = contents.split("\n");
+        var title = null;
+        var videoId = null;
+        for (var i = 0; i < lines.length; ++i) {
+            var line = lines[i];
+            if (line.startsWith("title:")) {
+                title = line.slice(8).replace(/"/g, "");
+            } else if (line.startsWith("videoId:")) {
+                videoId = line.slice(10).replace(/"/g, "");
+            }
+
+            if (title && videoId) {
+                break;
+            }
+        }
+
+        if (title && videoId) {
+            name = name.slice(0, name.indexOf("."));
+            nameParts = name.match(/([a-zA-Z_-]+)([0-9]+)?([a-zA-Z]+)?/);
+            prefix = nameParts[1].slice(0, 1).toUpperCase() + nameParts[1].slice(1) + (nameParts[2] ? " " + nameParts[2] : "") + (nameParts[3] ? " " + nameParts[3].toUpperCase() : "") + ": ";
+
+            updateEpisode(idx, prefix + title, videoId);
+        }
+
+    });
+    xhr.open("GET", filepath);
+    xhr.setRequestHeader("Content-Type", "text/plain");
+    xhr.send();
+}
+
+function renderEpisode(filename, filepath) {
+    var episodeContainer = document.createElement("A");
+    episodeContainer.setAttribute("href", "player.html#" + filepath);
+    episodeContainer.setAttribute("target", "_blank");
+    episodeContainer.classList.add("episodeContainer");
+    var thumbnail = document.createElement("IMG");
+    var spinner = document.createElement("IMG");
+    spinner.src = "spin.gif";
+    spinner.classList.add("spinner");
+    var titleEl = document.createElement("DIV");
+    titleEl.textContent = filename.slice(0, filename.indexOf("."));
+    episodeContainer.appendChild(thumbnail);
+    episodeContainer.appendChild(titleEl);
+    episodeContainer.appendChild(spinner);
+    document.getElementById("itemsContainer").appendChild(episodeContainer);
+}
+
+function updateEpisode(idx, title, videoId) {
+    episodeContainer = document.getElementById("itemsContainer").children[idx];
+    episodeContainer.children[0].src = "https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg";
+    episodeContainer.children[0].style.visibility = "visible";
+    episodeContainer.children[1].textContent = title;
+    episodeContainer.children[2].style.display = "none";
+}
+
+addItemToLoad();
+var script = document.createElement("SCRIPT");
+script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/game-architecture?callback=fileListLoaded");
+document.body.appendChild(script);
+
+addItemToLoad();
+var script = document.createElement("SCRIPT");
+script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/chat?callback=fileListLoaded");
+document.body.appendChild(script);
+
+addItemToLoad();
+var script = document.createElement("SCRIPT");
+script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/misc?callback=fileListLoaded");
+document.body.appendChild(script);
+
+addItemToLoad();
+var script = document.createElement("SCRIPT");
+script.setAttribute("src", "https://api.github.com/repos/HandmadeCompanion/HandmadeCompanion/contents/src/documents/videos/win32-platform?callback=fileListLoaded");
 document.body.appendChild(script);
 </script>
 
