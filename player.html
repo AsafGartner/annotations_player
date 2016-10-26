@@ -159,6 +159,7 @@ function onYouTubeIframeAPIReady() {
 
 var markers = null;
 var currentMarker = null;
+var currentMarkerIdx = null;
 var player = null;
 var playerReady = false;
 var playing = false;
@@ -245,6 +246,31 @@ function initVideo() {
         markersContainer.addEventListener("wheel", function(ev) {
             scrollTo = -1;
         });
+
+        document.addEventListener("keypress", function(ev) {
+            var targetTime = null;
+            switch (ev.key) {
+                case "n":
+                case "d":
+                case "s":
+                    var targetMarkerIdx = Math.min((currentMarkerIdx === null ? 0 : currentMarkerIdx + 1), markers.length-1);
+                    targetTime = markers[targetMarkerIdx].timestamp;
+                    break;
+                case "p":
+                case "a":
+                case "w":
+                    var targetMarkerIdx = Math.max(0, (currentMarkerIdx === null ? 0 : currentMarkerIdx - 1));
+                    targetTime = markers[targetMarkerIdx].timestamp;
+                    break;
+            }
+            if (playerReady && targetTime !== null) {
+                player.seekTo(targetTime);
+                currentTime = targetTime;
+                if (!playing) {
+                    player.playVideo();
+                }
+            }
+        });
         player = new YT.Player("player", {
             videoId: playerEl.getAttribute("data-videoId"),
             width: videoContainer.offsetWidth,
@@ -270,6 +296,7 @@ function updateSize() {
 
 function setProgress(time) {
     var newCurrentMarker = currentMarker;
+    var newCurrentMarkerIdx = null;
     for (var i = 0; i < markers.length; ++i) {
         var marker = markers[i];
         if (marker.timestamp <= time && marker.endTime > time) {
@@ -289,6 +316,7 @@ function setProgress(time) {
             if (currentMarker != marker) {
                 marker.el.classList.add("current");
                 newCurrentMarker = marker;
+                newCurrentMarkerIdx = i;
             }
         }
     }
@@ -300,6 +328,7 @@ function setProgress(time) {
             currentMarker.el.classList.remove("current");
         }
         currentMarker = newCurrentMarker;
+        currentMarkerIdx = newCurrentMarkerIdx;
         if (currentMarker) {
             scrollTo = currentMarker.el.offsetTop + currentMarker.el.offsetHeight/2.0;
             scrollPosition = document.querySelector(".playerContainer .markersContainer").scrollTop;
