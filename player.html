@@ -462,11 +462,11 @@ if (annotationsFileLocation) {
             if (line == "---") {
                 mode = "none";
             } else if (line.startsWith("title:")) {
-                annotations.title = line.slice(8).replace(/"/g, "");
+                annotations.title = line.slice(7).replace(/"/g, "");
             } else if (line.startsWith("videoId:")) {
-                annotations.videoId = line.slice(10).replace(/"/g, "");
+                annotations.videoId = line.slice(9).replace(/"/g, "");
             } else if (line.startsWith("author:")) {
-                annotations.author = line.slice(9).replace(/"/g, ""); // Miblo, where's the author field?
+                annotations.author = line.slice(8).replace(/"/g, ""); // Miblo, where's the author field?
             } else if (line.startsWith("markers")) {
                 mode = "markers";
             } else if (mode == "markers") {
