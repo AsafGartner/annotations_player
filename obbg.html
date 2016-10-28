@@ -1,0 +1,628 @@
+<!--
+    TODO:
+    * Detect if the tab is visible/active:
+        - Don't run the loop if the user can't see anything.
+        - Restart the loop and rerender the current state when the user comes back.
+    * Only run the update loop when we have something to do (playing or animating).
+    * Consider unifying the marker click handler.
+    * Consider manually blending the colors for the sub-pixel region of the completed marker. It looks like using opacity isn't perfect.
+-->
+
+
+
+<html>
+<head>
+<meta charset="UTF-8">
+<!-- STREAMER STYLE -->
+<style>
+
+body {
+    background-color: #eee;
+    font-family: sans-serif;
+}
+
+.titleRow {
+    background-color: #eee;
+    color: black;
+    font-weight: bold;
+}
+
+.marker {
+    border-bottom: 1px solid #888;
+}
+
+.marker:hover .content {
+    background-color: #ddd;
+}
+
+.marker:hover .fadedProgress .completed {
+    background-color: rgba(0, 0, 0, 0.7);
+    color: white;
+}
+
+.marker .content {
+    background-color: #eee;
+    color: black;
+}
+
+.marker.current .content {
+    color: #4DA650;
+}
+
+.marker .completed {
+    background-color: black;
+    color: #eee;
+}
+
+</style>
+<!-- END STREAMER STYLE -->
+
+
+<style>
+
+body {
+    padding: 0;
+    margin: 0;
+}
+
+.titleRow {
+    display: flex;
+    flex-direction: horizontal;
+    padding: 7px;
+}
+
+.title {
+    flex-grow: 1;
+}
+
+.middleContainer {
+    display: flex;
+    flex-direction: horizontal;
+}
+
+.markersContainer {
+    display: inline-block;
+    overflow-y: scroll;
+    overflow-x: hidden;
+    flex-shrink: 0;
+}
+
+.marker {
+    position: relative;
+    cursor: pointer;
+}
+
+.marker .content, .marker .completed {
+    width: 310px;
+    display: block;
+    padding: 5px;
+    font-size: 14px;
+    word-wrap: break-word;
+    box-sizing: border-box;
+}
+
+.marker .progress, .marker .fadedProgress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0px;
+    overflow: hidden;
+}
+
+.marker .timestamp {
+    margin-right: 5px;
+}
+
+.marker .author {
+    margin-right: 5px;
+}
+
+.videoContainer {
+    flex-grow: 1;
+    flex-shrink: 1;
+    display: inline-block;
+    overflow: hidden;
+}
+
+</style>
+</head>
+<body>
+
+<div class="playerContainer">
+    <div class="titleRow">
+        <span class="title"></span>
+        <span class="author"></span>
+    </div>
+    <div class="middleContainer">
+        <div class="videoContainer">
+            <div id="player"></div>
+        </div>
+        <div class="markersContainer">
+        </div>
+    <div>
+</div>
+<script>
+var domReady = false;
+var youtubeAPIReady = false;
+function onYouTubeIframeAPIReady() {
+    youtubeAPIReady = true;
+    initVideo();
+}
+
+var markers = null;
+var currentMarker = null;
+var currentMarkerIdx = null;
+var player = null;
+var playerReady = false;
+var playing = false;
+var speed = 1;
+var currentTime = 0;
+var lastFrameTime = 0;
+var scrollTo = -1;
+var scrollPosition = 0;
+var looping = false;
+var animating = true; // TODO(agartner): Actually set this to avoid looping when we don't need to.
+
+function onPlayerReady(ev) {
+    updateSize();
+    // NOTE(agartner): We assume that we initialize the youtube player after we read the markers from the DOM.
+    markers[markers.length-1].endTime = player.getDuration();
+    playerReady = true;
+    start();
+}
+
+function onPlayerStateChange(ev) {
+    if (ev.data == YT.PlayerState.PLAYING) {
+        playing = true;
+        currentTime = player.getCurrentTime();
+    } else if (ev.data == YT.PlayerState.PAUSED || ev.data == YT.PlayerState.BUFFERING) {
+        playing = false;
+        currentTime = player.getCurrentTime();
+        setProgress(currentTime);
+    } else {
+        playing = false;
+    }
+}
+
+function onPlayerPlaybackRateChange(ev) {
+    speed = ev.data;
+}
+
+function initVideo() {
+    if (youtubeAPIReady && domReady) {
+        markers = [];
+        var markerEls = document.querySelectorAll(".playerContainer .marker");
+        for (var i = 0; i < markerEls.length; ++i) {
+            var marker = {
+                timestamp: parseInt(markerEls[i].getAttribute("data-timestamp")),
+                endTime: (i < markerEls.length - 1 ? parseInt(markerEls[i+1].getAttribute("data-timestamp")) : null),
+                el: markerEls[i],
+                fadedProgress: markerEls[i].querySelector(".fadedProgress"),
+                progress: markerEls[i].querySelector(".progress"),
+                hoverx: null
+            };
+            markers.push(marker);
+            markerEls[i].addEventListener("click", (function(marker) {
+                return function(ev) {
+                    if (playerReady) {
+                        var time = marker.timestamp;
+                        if (ev.currentTarget.classList.contains("current") && marker.hoverx !== null) {
+                            time += (marker.endTime - marker.timestamp) * marker.hoverx;
+                        }
+                        player.seekTo(time, true);
+                        currentTime = time;
+                        if (!playing) {
+                            player.playVideo();
+                        }
+                    }
+                }
+            })(marker));
+            markerEls[i].addEventListener("mousemove", (function(marker) {
+                return function(ev) {
+                    if (marker.el.classList.contains("current")) {
+                        marker.hoverx = (ev.clientX - ev.currentTarget.offsetLeft) / ev.currentTarget.offsetWidth;
+                    }
+                }
+            })(marker));
+            markerEls[i].addEventListener("mouseleave", (function(marker) {
+                return function(ev) {
+                    marker.hoverx = null;
+                }
+            })(marker));
+        }
+        var playerContainer = document.querySelector(".playerContainer");
+        var playerEl = document.querySelector("#player");
+        var videoContainer = playerContainer.querySelector(".videoContainer");
+        var markersContainer = playerContainer.querySelector(".markersContainer");
+        markersContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+        markersContainer.addEventListener("wheel", function(ev) {
+            scrollTo = -1;
+        });
+
+        document.addEventListener("keypress", function(ev) {
+            var targetTime = null;
+            switch (ev.key) {
+                case "n":
+                case "d":
+                case "s":
+                    var targetMarkerIdx = Math.min((currentMarkerIdx === null ? 0 : currentMarkerIdx + 1), markers.length-1);
+                    targetTime = markers[targetMarkerIdx].timestamp;
+                    break;
+                case "p":
+                case "a":
+                case "w":
+                    var targetMarkerIdx = Math.max(0, (currentMarkerIdx === null ? 0 : currentMarkerIdx - 1));
+                    targetTime = markers[targetMarkerIdx].timestamp;
+                    break;
+            }
+            if (playerReady && targetTime !== null) {
+                player.seekTo(targetTime);
+                currentTime = targetTime;
+                if (!playing) {
+                    player.playVideo();
+                }
+            }
+        });
+        player = new YT.Player("player", {
+            videoId: playerEl.getAttribute("data-videoId"),
+            width: videoContainer.offsetWidth,
+            height: videoContainer.offsetWidth / 16 * 9,
+            events: {
+                "onReady": onPlayerReady,
+                "onStateChange": onPlayerStateChange,
+                "onPlaybackRateChange": onPlayerPlaybackRateChange
+            }
+        });
+        window.addEventListener("resize", function() {
+            updateSize();
+        });
+    }
+}
+
+function updateSize() {
+    var videoContainer = document.querySelector(".playerContainer .videoContainer");
+    var markersContainer = document.querySelector(".playerContainer .markersContainer");
+    player.setSize(videoContainer.offsetWidth, videoContainer.offsetWidth / 16 * 9);
+    markersContainer.style.height = videoContainer.offsetWidth / 16 * 9;
+}
+
+function setProgress(time) {
+    var newCurrentMarker = currentMarker;
+    var newCurrentMarkerIdx = null;
+    for (var i = 0; i < markers.length; ++i) {
+        var marker = markers[i];
+        if (marker.timestamp <= time && marker.endTime > time) {
+            var totalWidth = marker.el.offsetWidth;
+            var progress = ((time - marker.timestamp) / (marker.endTime - marker.timestamp));
+            if (marker.hoverx === null || marker.hoverx == progress) {
+                var pixelWidth = progress * totalWidth;
+                marker.fadedProgress.style.width = Math.ceil(pixelWidth) + "px";
+                var opacity = pixelWidth - Math.floor(pixelWidth);
+                marker.fadedProgress.style.opacity = opacity;
+                marker.progress.style.width = Math.floor(pixelWidth) + "px";
+            } else {
+                marker.fadedProgress.style.opacity = 1;
+                marker.progress.style.width = Math.floor(Math.min(marker.hoverx, progress) * totalWidth) + "px";
+                marker.fadedProgress.style.width = Math.floor(Math.max(marker.hoverx, progress) * totalWidth) + "px";
+            }
+            if (currentMarker != marker) {
+                marker.el.classList.add("current");
+                newCurrentMarker = marker;
+                newCurrentMarkerIdx = i;
+            }
+        }
+    }
+
+    if (currentMarker != newCurrentMarker) {
+        if (currentMarker) {
+            currentMarker.fadedProgress.style.width = "0px";
+            currentMarker.progress.style.width = "0px";
+            currentMarker.el.classList.remove("current");
+        }
+        currentMarker = newCurrentMarker;
+        currentMarkerIdx = newCurrentMarkerIdx;
+        if (currentMarker) {
+            scrollTo = currentMarker.el.offsetTop + currentMarker.el.offsetHeight/2.0;
+            scrollPosition = document.querySelector(".playerContainer .markersContainer").scrollTop;
+        }
+    }
+}
+
+function update() {
+    var now = performance.now();
+    var delta = (now - lastFrameTime) / 1000.0;
+    lastFrameTime = now;
+    if (playing) {
+        currentTime += delta * speed;
+    }
+    setProgress(currentTime);
+
+    if (scrollTo >= 0) {
+        var markersContainer = document.querySelector(".playerContainer .markersContainer");
+        var targetPosition = scrollTo - markersContainer.offsetHeight/2.0;
+        targetPosition = Math.max(0, Math.min(targetPosition, markersContainer.scrollHeight - markersContainer.offsetHeight));
+        scrollPosition += (targetPosition - scrollPosition) * 0.1;
+        if (Math.abs(scrollPosition - targetPosition) < 1.0) {
+            markersContainer.scrollTop = targetPosition;
+            scrollTo = -1;
+        } else {
+            markersContainer.scrollTop = scrollPosition;
+        }
+    }
+
+    if (playing || animating) {
+        requestAnimationFrame(update);
+    } else {
+        looping = false;
+    }
+}
+
+function start() {
+    if (!looping) {
+        looping = true;
+        lastFrameTime = performance.now();
+        update();
+    }
+}
+
+// Page generation stuff (to be removed once this is rendered by the server)
+
+function generatePlayer(annotations) {
+    var playerContainer = document.querySelector(".playerContainer");
+    var playerEl = document.querySelector("#player");
+    var title = playerContainer.querySelector(".title");
+    var author = playerContainer.querySelector(".author");
+    var markersContainer = playerContainer.querySelector(".markersContainer");
+
+    author.textContent = "Annotations by: " + (annotations.annotator || "Probably Miblo");
+    title.textContent = annotations.title;
+    playerEl.setAttribute("data-videoId", annotations.id);
+
+    for (var i = 0; i < annotations.markers.length; ++i) {
+        var marker = annotations.markers[i];
+
+        var markerEl = document.createElement("DIV");
+        markerEl.classList.add("marker");
+        markerEl.setAttribute("data-timestamp", marker.totalTime);
+
+        var contentEl = document.createElement("DIV");
+        contentEl.classList.add("content");
+        var timestampEl = document.createElement("SPAN");
+        timestampEl.textContent = markerTime(marker.totalTime);
+        timestampEl.classList.add("timestamp");
+        contentEl.appendChild(timestampEl);
+        if (marker.author) {
+            var authorEl = document.createElement("SPAN");
+            authorEl.textContent = marker.author;
+            authorEl.classList.add("author");
+            contentEl.appendChild(authorEl);
+        }
+        var textEl = document.createElement("SPAN");
+        textEl.textContent = marker.text;
+        textEl.classList.add("text");
+        contentEl.appendChild(textEl);
+        markerEl.appendChild(contentEl);
+
+        var fadedProgressEl = document.createElement("DIV");
+        fadedProgressEl.classList.add("fadedProgress");
+        markerEl.appendChild(fadedProgressEl);
+
+        var progressEl = document.createElement("DIV");
+        progressEl.classList.add("progress");
+        markerEl.appendChild(progressEl);
+
+        var completedEl = contentEl.cloneNode(true);
+        completedEl.classList.add("completed");
+        completedEl.classList.remove("content");
+        fadedProgressEl.appendChild(completedEl);
+        progressEl.appendChild(completedEl.cloneNode(true));
+
+        markersContainer.appendChild(markerEl);
+    }
+
+    domReady = true;
+    initVideo();
+}
+
+function markerTime(totalTime) {
+    var markTime = "(";
+    var hours = Math.floor(totalTime / 60 / 60);
+    var minutes = Math.floor(totalTime / 60) % 60;
+    var seconds = totalTime % 60;
+    if (hours > 0) {
+        markTime += padTimeComponent(hours) + ":";
+    }
+
+    markTime += padTimeComponent(minutes) + ":" + padTimeComponent(seconds) + ")";
+
+    return markTime;
+}
+
+function padTimeComponent(component) {
+    return (component < 10 ? "0" + component : component);
+}
+
+function getNode(parser) {
+    var result = "";
+    while(parser.pos < parser.text.length && !(parser.text[parser.pos] == "[" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\"))) {
+        parser.pos++;
+    }
+    var subnodeCount = 0;
+    var done = false;
+    while (!done) {
+        if (parser.pos < parser.text.length) {
+            result += parser.text[parser.pos];
+            if (parser.text[parser.pos] == "[" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\")) {
+                subnodeCount++;
+            }
+            if (parser.text[parser.pos] == "]" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\")) {
+                subnodeCount--;
+                if (subnodeCount == 0) {
+                    done = true;
+                }
+            }
+            parser.pos++;
+        } else {
+            done = true;
+        }
+    }
+    return result.length > 0 ? result : null;
+}
+
+function isTimestamp(node) {
+    var match = node.match(/\[(\d?\d:)?\d?\d:\d\d\]/);
+    return match != null;
+}
+
+function parseTimestamp(node) {
+    var match = node.match(/\[((\d?\d):)?(\d?\d):(\d\d)\]/);
+    var hours = match[1] ? parseInt(match[1], 10) : 0;
+    var minutes = parseInt(match[3], 10);
+    var seconds = parseInt(match[4], 10);
+    return hours * 60 * 60 + minutes * 60 + seconds;
+}
+
+function isAuthor(node) {
+    var match = node.match(/\[@[^\s]+\]/);
+    return match != null;
+}
+
+function parseAuthor(node) {
+    return node.slice(2, node.length-1);
+}
+
+function parseCategories(node) {
+    var categories = [];
+
+    return categories;
+}
+
+function parseText(node) {
+    var result = {
+        text: node.slice(1, node.length-1),
+        categories: []
+    }
+    return result;
+}
+
+function getAttribute(parser) {
+    var untilQuotes = false;
+    var result = {
+        key: "",
+        value: ""
+    }
+    while (parser.pos < parser.text.length && parser.text[parser.pos].match(/\s/)) {
+        parser.pos++;
+    }
+
+    var gotKey = false;
+    var gotValue = false;
+    while (!gotKey || !gotValue) {
+        if (parser.pos < parser.text.length) {
+            if (gotKey) {
+                if (parser.text[parser.pos] == "\"") {
+                    if (untilQuotes) {
+                        gotValue = true;
+                    } else {
+                        untilQuotes = true;
+                    }
+                } else if (!untilQuotes && (parser.text[parser.pos].match(/\s/) || parser.text[parser.pos] == "]")) {
+                    gotValue = true;
+                } else {
+                    result.value += parser.text[parser.pos];
+                }
+            } else {
+                if (parser.text[parser.pos] == "=") {
+                    gotKey = true;
+                } else {
+                    result.key += parser.text[parser.pos];
+                }
+            }
+            parser.pos++;
+        } else {
+            break;
+        }
+    }
+
+    return (gotKey && gotValue) ? result : null;
+}
+
+var annotationsFileLocation = "obbg042.hmml";
+var annotations = {
+    // marker has {totalTime, text, categories}
+    markers: []
+};
+
+var xhr = new XMLHttpRequest();
+xhr.addEventListener("load", function() {
+    var contents = xhr.response;
+    var parser = {
+        text: contents,
+        pos: 0
+    }
+
+    var inVideo = false;
+    var currentMarker = null;
+    var currentNode = null;
+
+    while (currentNode = getNode(parser)) {
+        if (inVideo) {
+            if (currentNode == "[/video]") {
+                if (currentMarker) {
+                    annotations.markers.push(currentMarker);
+                    currentMarker = null;
+                }
+                inVideo = false;
+            } else {
+                if (isTimestamp(currentNode)) {
+                    if (currentMarker) {
+                        annotations.markers.push(currentMarker);
+                        currentMarker = null;
+                    }
+                    currentMarker = {
+                        totalTime: parseTimestamp(currentNode),
+                        categories: [],
+                        author: null,
+                        text: null
+                    };
+                } else if (isAuthor(currentNode)) {
+                    currentMarker.author = parseAuthor(currentNode);
+                } else if (currentMarker.text) {
+                    currentMarker.categories = parseCategories(currentNode);
+                } else {
+                    var textNodeResult = parseText(currentNode);
+                    currentMarker.categories.concat(textNodeResult.categories);
+                    currentMarker.text = textNodeResult.text;
+                }
+            }
+        } else {
+            if (currentNode.startsWith("[video")) {
+                var nodeParser = { text: currentNode, pos: 6 };
+                var attribute = null;
+                while (attribute = getAttribute(nodeParser)) {
+                    annotations[attribute.key] = attribute.value;
+                }
+                inVideo = true;
+            }
+        }
+    }
+    if (currentMarker) {
+        annotations.markers.push(currentMarker);
+    }
+
+    generatePlayer(annotations);
+});
+
+xhr.addEventListener("error", function() {
+    document.write("Could not load annotations file.");
+});
+xhr.open("GET", annotationsFileLocation);
+xhr.setRequestHeader("Content-Type", "text/plain");
+xhr.send();
+
+</script>
+<script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
+</body>
+</html>
+
