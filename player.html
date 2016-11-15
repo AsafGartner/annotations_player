@@ -170,12 +170,17 @@ var scrollTo = -1;
 var scrollPosition = 0;
 var looping = false;
 var animating = true; // TODO(agartner): Actually set this to avoid looping when we don't need to.
+var startTime = null;
 
 function onPlayerReady(ev) {
     updateSize();
     // NOTE(agartner): We assume that we initialize the youtube player after we read the markers from the DOM.
     markers[markers.length-1].endTime = player.getDuration();
     playerReady = true;
+    if (startTime) {
+        player.seekTo(startTime, true);
+        currentTime = startTime;
+    }
     start();
 }
 
@@ -440,9 +445,13 @@ function padTimeComponent(component) {
 var hash = location.hash;
 var annotationsFileLocation = null;
 if (hash && hash.length > 1) {
+    if (hash[0] == "#") {
+        hash = hash.slice(1);
+    }
+    var hashParts = hash.split("#");
     annotationsFileLocation = hash;
-    if (annotationsFileLocation[0] == "#") {
-        annotationsFileLocation = annotationsFileLocation.slice(1);
+    if (hashParts.length > 1) {
+        startTime = parseInt(hashParts[1], 10);
     }
 }
 
