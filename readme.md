@@ -31,7 +31,7 @@ markers:
     "17:02:47": "This is a long video"
 ---
 ```
-The `videoId` field contains Youtube's video ID of the video you want to play (https://youtube.com/watch?v=[this part]). There's no support for Vimeo yet.
+The `videoId` field contains Youtube's video ID of the video you want to play (`https://youtube.com/watch?v=[this part]`). There's no support for Vimeo yet.
 
 #### 2. Host the file:
 
@@ -43,7 +43,8 @@ This can be easily done with https://gist.github.com:
 
 #### 3. Play:
 
-You're done! Go to http://asafgartner.github.io/annotations_player/player.html#[full url to the raw file here] and it should play the video while tracking the markers.
+You're done! Go to `http://asafgartner.github.io/annotations_player/player.html#[full url to the raw file here]` and it should play the video while tracking the markers.
+
 Please contact me if you encounter any issues.
 
 ## 2. Host the player on your own, but still use a separate annotation file:
@@ -74,7 +75,7 @@ markers:
     "17:02:47": "This is a long video"
 ---
 ```
-The `videoId` field contains Youtube's video ID of the video you want to play (https://youtube.com/watch?v=[this part]). There's no support for Vimeo yet.
+The `videoId` field contains Youtube's video ID of the video you want to play (`https://youtube.com/watch?v=[this part]`). There's no support for Vimeo yet.
 
 #### 2. Embed the player in your page:
 
@@ -84,6 +85,7 @@ The `videoId` field contains Youtube's video ID of the video you want to play (h
 4. Copy the youtube iframe api `<script>` tag into your page's HTML.
 
 **NOTE:** Make sure the youtube iframe api is the last piece of javascript to load in the page.
+
 **NOTE:** If you'd like to put the inline js in a file and load it in the `<head>`, please make sure `generatePlayer` will only be called after the `playerContainer` is on the page.
 
 #### 3. Customization:
@@ -124,6 +126,7 @@ Cons:
 4. Copy the youtube iframe api `<script>` tag into your page's HTML.
 
 **NOTE:** Make sure the youtube iframe api is the last piece of javascript to load in the page.
+
 **NOTE:** If you'd like to put the inline js in a file and load it in the `<head>`, please make sure `generatePlayer` will only be called after the `playerContainer` is on the page.
 
 #### 2. Modify the player:
@@ -135,7 +138,7 @@ Cons:
 
 1. Fill in the `title` span with your video's title.
 2. Fill in the `author` span with the author's name.
-3. Add a `data-videoId` attribute to the `#player` div and set it to Youtube's video ID (https://youtube.com/watch?v=[this part]).
+3. Add a `data-videoId` attribute to the `#player` div and set it to Youtube's video ID (`https://youtube.com/watch?v=[this part]`).
 
 #### 4. Rendering the markers:
 
@@ -152,6 +155,7 @@ Each marker is composed of the following HTML structure:
 </div>
 ```
 **NOTE:** `data-timestamp` is the number of seconds since the beginning of the video.
+
 **NOTE:** The same marker's text is rendered three times into different elements. This is required in order to get the filling-in effect. It should be exactly the same text into all three elements.
 
 These marker divs should be put inside the `markersContainer` div. They are expected to be sorted by `data-timestamp`.
