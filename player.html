@@ -493,13 +493,15 @@ if (annotationsFileLocation) {
     });
 
     xhr.addEventListener("error", function() {
-        document.write("Could not load annotations file. <a href='index.html'>Try a different episode</a>");
+        document.querySelector(".playerContainer .title").innerHTML = "Could not load annotations file. <a href='index.html'>Try a different episode</a>";
+        document.querySelector(".middleContainer").style.display = "none";
     });
     xhr.open("GET", annotationsFileLocation);
     xhr.setRequestHeader("Content-Type", "text/plain");
     xhr.send();
 } else {
-    document.write("<a href='index.html'>Choose an episode</a>");
+    document.querySelector(".playerContainer .title").innerHTML = "<a href='index.html'>Choose an episode</a>";
+    document.querySelector(".middleContainer").style.display = "none";
 }
 
 </script>
