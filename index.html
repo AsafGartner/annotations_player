@@ -158,7 +158,7 @@ function addFile(name, filepath, idx) {
 
 function renderEpisode(filename, filepath) {
     var episodeContainer = document.createElement("A");
-    episodeContainer.setAttribute("href", "player.html#" + filepath);
+    episodeContainer.setAttribute("href", "hmh.html#" + filename.split(".")[0]);
     episodeContainer.setAttribute("target", "_blank");
     episodeContainer.classList.add("episodeContainer");
     var thumbnail = document.createElement("IMG");
