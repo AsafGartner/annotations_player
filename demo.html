@@ -1,0 +1,409 @@
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <!-- Load the player -->
+    <script type="text/javascript" src="player.js"></script>
+
+    <style>
+/* USER-DEFINED */
+
+.marker .content {
+    width: 210px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+.marker {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.marker:hover > .content {
+    background-color: #222;
+}
+
+.marker:hover .faded .content {
+    background-color: rgba(139, 61, 35, 0.7);
+    color: black;
+}
+
+.marker > .content {
+    background-color: #161616;
+    color: #8A877D;
+}
+
+.marker.current > .content {
+    color: #B57714;
+}
+
+.marker .progress .content {
+    background-color: #8B3D23;
+    color: black;
+}
+
+/* MANDATORY */
+
+.player_container {
+    display: flex;
+    flex-direction: row;
+}
+
+.video_container {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.markers_container {
+    overflow-y: scroll;
+    position: relative;
+}
+
+.marker {
+    position: relative;
+    cursor: pointer;
+}
+
+.marker .content {
+    display: block;
+    box-sizing: border-box;
+    word-wrap: break-word;
+}
+
+.marker .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0px;
+    overflow: hidden;
+}
+
+/* CUSTOM PAGE STYLE */
+
+body {
+    background-color: #222;
+    font-family: sans-serif;
+    color: white;
+}
+
+.player_container {
+    width: 1500px;
+    margin: 30px auto;
+}
+
+.modal_window {
+    background-color: rgba(0, 0, 0, 0.85);
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+}
+
+.modal_window .contents {
+    width: 75%;
+    border: 3px solid white;
+    border-radius: 10px;
+    background-color: #222;
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+.day201_container .marker .content {
+    width: 250px;
+    font-size: 12px;
+}
+
+.modal_window .contents .player_container {
+    width: 100%;
+    margin: 0;
+}
+    </style>
+</head>
+<body>
+
+<!-- ##################################################### -->
+<!-- First example - Generating markers through javascript -->
+<!-- ##################################################### -->
+<div class="player_container rothfuss">
+    <div class="video_container" data-videoId="MPEB6NAGoYk"></div>
+    <div class="markers_container"></div>
+</div>
+
+<script>
+var firstMarkers = document.querySelector(".rothfuss .markers_container");
+firstMarkers.appendChild(Player.createHTMLMarker(0, "Intro and technical adjustments"));
+firstMarkers.appendChild(Player.createHTMLMarker("1:09", "Cthaeh"));
+firstMarkers.appendChild(Player.createHTMLMarker("1:19", "Kvothe"));
+firstMarkers.appendChild(Player.createHTMLMarker("1:27", "Adem"));
+firstMarkers.appendChild(Player.createHTMLMarker("1:29", "Ademre"));
+firstMarkers.appendChild(Player.createHTMLMarker("1:37", "Cealdish"));
+firstMarkers.appendChild(Player.createHTMLMarker("2:19", "Siaru"));
+firstMarkers.appendChild(Player.createHTMLMarker("2:33", "Tempi"));
+firstMarkers.appendChild(Player.createHTMLMarker("2:43", "Devi"));
+firstMarkers.appendChild(Player.createHTMLMarker("3:30", "Edema Ruh"));
+firstMarkers.appendChild(Player.createHTMLMarker("3:39", "Tarbean"));
+firstMarkers.appendChild(Player.createHTMLMarker("3:49", "How is the road to Tinue?"));
+firstMarkers.appendChild(Player.createHTMLMarker("4:12", "Vashet"));
+firstMarkers.appendChild(Player.createHTMLMarker("4:26", "Letantha"));
+firstMarkers.appendChild(Player.createHTMLMarker("4:39", "Haert"));
+firstMarkers.appendChild(Player.createHTMLMarker("4:46", "Feant"));
+firstMarkers.appendChild(Player.createHTMLMarker("4:58", "Elodin"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:13", "Imre"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:24", "Amyr"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:27", "Modeg"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:28", "Yll"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:41", "Skarpi"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:45", "Myr Tariniel"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:50", "Tehlu & Tehlin"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:55", "Taborlin the Great"));
+firstMarkers.appendChild(Player.createHTMLMarker("5:57", "Kote"));
+firstMarkers.appendChild(Player.createHTMLMarker("6:26", "Chandrian"));
+firstMarkers.appendChild(Player.createHTMLMarker("6:31", "Fela"));
+firstMarkers.appendChild(Player.createHTMLMarker("6:51", "Master Hemme"));
+firstMarkers.appendChild(Player.createHTMLMarker("7:01", "Lanre & Lyra"));
+firstMarkers.appendChild(Player.createHTMLMarker("7:08", "Maedre"));
+firstMarkers.appendChild(Player.createHTMLMarker("7:26", "Auri"));
+firstMarkers.appendChild(Player.createHTMLMarker("7:40", "The Eolian"));
+firstMarkers.appendChild(Player.createHTMLMarker("7:45", "The Name of the Wind"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:02", "Aleph"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:28", "Aturan"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:39", "Elxa Dal"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:46", "Trebon"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:50", "Lethani"));
+firstMarkers.appendChild(Player.createHTMLMarker("8:55", "Abenthy"));
+firstMarkers.appendChild(Player.createHTMLMarker("9:04", "Felurian"));
+firstMarkers.appendChild(Player.createHTMLMarker("9:14", "Ciridae"));
+firstMarkers.appendChild(Player.createHTMLMarker("9:35", "Carceret"));
+firstMarkers.appendChild(Player.createHTMLMarker("9:55", "Saicere & Caesura"));
+firstMarkers.appendChild(Player.createHTMLMarker("10:08", "Centhe Sea"));
+firstMarkers.appendChild(Player.createHTMLMarker("10:17", "Newarre"));
+firstMarkers.appendChild(Player.createHTMLMarker("10:30", "El'the"));
+firstMarkers.appendChild(Player.createHTMLMarker("10:49", "On fantasy naming"));
+firstMarkers.appendChild(Player.createHTMLMarker("13:01", "Reshi"));
+firstMarkers.appendChild(Player.createHTMLMarker("13:13", "Amauen & Anpauen"));
+firstMarkers.appendChild(Player.createHTMLMarker("14:01", "Vorfelan Rhinata Morie"));
+firstMarkers.appendChild(Player.createHTMLMarker("14:11", "Maer"));
+firstMarkers.appendChild(Player.createHTMLMarker("14:29", "Maer Alveron"));
+firstMarkers.appendChild(Player.createHTMLMarker("15:01", "Valeritas"));
+firstMarkers.appendChild(Player.createHTMLMarker("15:23", "Kist & Kraem"));
+firstMarkers.appendChild(Player.createHTMLMarker("16:05", "Shaed"));
+firstMarkers.appendChild(Player.createHTMLMarker("16:13", "Sir Savien & Aloine"));
+firstMarkers.appendChild(Player.createHTMLMarker("16:28", "Devan Lochees"));
+firstMarkers.appendChild(Player.createHTMLMarker("17:20", "Denna"));
+firstMarkers.appendChild(Player.createHTMLMarker("18:35", "Cinnas"));
+firstMarkers.appendChild(Player.createHTMLMarker("18:40", "Scrael"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:04", "Alar"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:14", "Foxen"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:17", "Rike"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:24", "Re'lar"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:29", "Teccam"));
+firstMarkers.appendChild(Player.createHTMLMarker("19:52", "Sithe"));
+firstMarkers.appendChild(Player.createHTMLMarker("20:05", "Usnea"));
+firstMarkers.appendChild(Player.createHTMLMarker("20:13", "Count Threpe"));
+firstMarkers.appendChild(Player.createHTMLMarker("20:34", "Tahlenwold"));
+firstMarkers.appendChild(Player.createHTMLMarker("20:40", "Wrap it up"));
+
+var rothfussPlayer = new Player(document.querySelector(".rothfuss"));
+</script>
+
+<!-- ############################################################################################# -->
+<!-- Second example - Download an annotation file, parse it, set the video id and generate markers -->
+<!-- ############################################################################################# -->
+<div class="player_container day201_container">
+    <div class="video_container"></div>
+    <div class="markers_container"></div>
+</div>
+
+<script>
+var day201Player = null;
+var xhr201 = new XMLHttpRequest();
+xhr201.addEventListener("load", function() {
+    var text = xhr201.response;
+    var result = Player.parseHMHAnnotation(text);
+    document.querySelector(".day201_container .video_container").setAttribute("data-videoId", result.videoId);
+    var markersContainer = document.querySelector(".day201_container .markers_container");
+    for (var i = 0; i < result.markers.length; ++i) {
+        var marker = Player.createHTMLMarker(result.markers[i].timestamp, result.markers[i].text);
+        markersContainer.appendChild(marker);
+    }
+    day201Player = new Player(document.querySelector(".day201_container"));
+});
+
+xhr201.open("GET", "https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/src/documents/videos/code/day201.html.md");
+xhr201.setRequestHeader("Content-Type", "text/plain");
+xhr201.send();
+</script>
+
+<!-- ############################################################################## -->
+<!-- Third example - Prerender all the HTML, including the video id and the markers -->
+<!-- ############################################################################## -->
+
+<div class="player_container raz">
+    <div class="markers_container">
+        <div class="marker" data-timestamp=0>
+            <div class="content">Glam rock</div>
+            <div class="progress faded">
+                <div class="content">Glam rock</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Glam rock</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=26>
+            <div class="content">Heavy metal</div>
+            <div class="progress faded">
+                <div class="content">Heavy metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Heavy metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=42>
+            <div class="content">Power metal</div>
+            <div class="progress faded">
+                <div class="content">Power metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Power metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=58>
+            <div class="content">Folk metal</div>
+            <div class="progress faded">
+                <div class="content">Folk metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Folk metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=90>
+            <div class="content">Black metal</div>
+            <div class="progress faded">
+                <div class="content">Black metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Black metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=107>
+            <div class="content">Death metal</div>
+            <div class="progress faded">
+                <div class="content">Death metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Death metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=123>
+            <div class="content">Thrash metal</div>
+            <div class="progress faded">
+                <div class="content">Thrash metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Thrash metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=131>
+            <div class="content">Melodic death metal</div>
+            <div class="progress faded">
+                <div class="content">Melodic death metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Melodic death metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=140>
+            <div class="content">Progressive metal</div>
+            <div class="progress faded">
+                <div class="content">Progressive metal</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Progressive metal</div>
+            </div>
+        </div>
+        <div class="marker" data-timestamp=155>
+            <div class="content">Metalcore</div>
+            <div class="progress faded">
+                <div class="content">Metalcore</div>
+            </div>
+            <div class="progress main">
+                <div class="content">Metalcore</div>
+            </div>
+        </div>
+    </div>
+    <div class="video_container" data-videoId="qpZ18recO9A"></div>
+</div>
+
+<script>
+var metalPlayer = new Player(document.querySelector(".raz"));
+</script>
+
+<!-- ################################################################################# -->
+<!-- Fourth example - Thumbnail that when clicked opens a modal window with the player -->
+<!-- ################################################################################# -->
+
+<div style="text-align: center;">
+    <img class="thumbnail" src="https://i.ytimg.com/vi/rrlr02YDr5A/mqdefault.jpg" style="cursor: pointer;" />
+    <br />
+    ^ Click me ^
+</div>
+<div class="modal_window" style="display: none; pointer-events: auto;">
+    <div class="contents">
+        <div class="player_container modal">
+            <div class="video_container" data-videoId="rrlr02YDr5A"></div>
+            <div class="markers_container"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+var modalPlayer = null;
+var modalWindow = document.querySelector(".modal_window");
+document.querySelector(".thumbnail").addEventListener("click", function() {
+    modalWindow.style.display = "flex";
+    if (!modalPlayer) {
+        var markersContainer = modalWindow.querySelector(".markers_container");
+        markersContainer.appendChild(Player.createHTMLMarker(0, "Chopping some wood"));
+        markersContainer.appendChild(Player.createHTMLMarker(9, "Shaping the spear thrower"));
+        markersContainer.appendChild(Player.createHTMLMarker(41, "Cutting some wood for the spear"));
+        markersContainer.appendChild(Player.createHTMLMarker(52, "Shaping the back end of the spear to fit the tip of the thrower"));
+        markersContainer.appendChild(Player.createHTMLMarker("1:11", "Making a fire"));
+        markersContainer.appendChild(Player.createHTMLMarker("2:50", "Firing and shaping the business end of the spear"));
+        markersContainer.appendChild(Player.createHTMLMarker("3:14", "Testing it all out"));
+        modalPlayer = new Player(document.querySelector(".player_container.modal"));
+    } else {
+        modalPlayer.resume();
+    }
+    modalPlayer.updateSize();
+    modalPlayer.play();
+});
+
+modalWindow.addEventListener("click", function(ev) {
+    if (ev.originalTarget == modalWindow) {
+        if (modalPlayer) {
+            modalPlayer.halt();
+        }
+        setTimeout(function() {
+            // Youtube doesn't pause the video properly if when hidden (even though it reports that it did), so we have to queue up the hiding for later :/
+            modalWindow.style.display = "none";
+        }, 0);
+    }
+});
+
+modalWindow.addEventListener("wheel", function(ev) {
+    ev.preventDefault();
+    return false;
+});
+
+window.addEventListener("resize", function() {
+    if (modalPlayer) {
+        modalPlayer.updateSize();
+    }
+});
+</script>
+</body>
+</html>
