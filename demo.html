@@ -87,7 +87,7 @@ body {
 }
 
 .player_container {
-    width: 1500px;
+    width: 80%;
     margin: 30px auto;
 }
 
@@ -400,6 +400,15 @@ modalWindow.addEventListener("wheel", function(ev) {
 });
 
 window.addEventListener("resize", function() {
+    if (rothfussPlayer) {
+        rothfussPlayer.updateSize();
+    }
+    if (day201Player) {
+        day201Player.updateSize();
+    }
+    if (metalPlayer) {
+        metalPlayer.updateSize();
+    }
     if (modalPlayer) {
         modalPlayer.updateSize();
     }
