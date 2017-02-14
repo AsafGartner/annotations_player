@@ -4,7 +4,7 @@ There are a number of ways to play your own content through the player. We will 
 
 ## 0. Use player.js
 
-Take a look at [the demo page](asafgartner.github.io/annotations_player/demo.html).
+Take a look at [the demo page](https://asafgartner.github.io/annotations_player/demo.html).
 It contains four examples for setting up the player in your own page.
 
 ## 1. Use the player hosted on asafgartner.github.io/annotations_player/player.html
