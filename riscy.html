@@ -1,0 +1,140 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Riscy Business Episode List</title>
+<style>
+body {
+    padding: 10px;
+    margin: 0;
+    background-color: #222;
+    font-family: sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+}
+
+#spinner {
+    position: fixed;
+    width: 50px;
+    height: 50px;
+    top: 0;
+    right: 0;
+    display: none;
+}
+
+.episodeContainer {
+    display: inline-block;
+    margin: 15px;
+    width: 320px;
+    overflow: hidden;
+    vertical-align: top;
+    position: relative;
+    text-decoration: none;
+}
+
+.episodeContainer img {
+    display: block;
+    width: 320px;
+    height: 180px;
+    visibility: hidden;
+}
+
+.episodeContainer img.spinner {
+    display: block;
+    visibility: visible;
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    left: 135px;
+    top: 55px;
+}
+
+.episodeContainer div {
+    padding: 5px;
+    background-color: rgba(0, 0, 0, 0.8);
+    color: #D4D0C2;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 320px;
+    transition: background-color 100ms ease-in-out;
+}
+
+.episodeContainer:hover div {
+    background-color: rgba(50, 50, 50, 1);
+}
+    
+.episodeContainer:visited div {
+    color: #834083;
+}
+</style>
+</head>
+<body>
+<div id="itemsContainer">
+</div>
+<script>
+
+function renderEpisode(episode) {
+    var episodeContainer = document.createElement("A");
+    episodeContainer.setAttribute("href", "riscy_player.html#" + episode.filename.split(".")[0]);
+    episodeContainer.setAttribute("target", "_blank");
+    episodeContainer.classList.add("episodeContainer");
+    var thumbnail = document.createElement("IMG");
+    var spinner = document.createElement("IMG");
+    spinner.src = "spin.gif";
+    spinner.classList.add("spinner");
+    var titleEl = document.createElement("DIV");
+    titleEl.textContent = episode.filename.slice(0, episode.filename.indexOf("."));
+    episodeContainer.appendChild(thumbnail);
+    episodeContainer.appendChild(titleEl);
+    episodeContainer.appendChild(spinner);
+    document.getElementById("itemsContainer").appendChild(episodeContainer);
+}
+
+function updateEpisode(idx, title, videoId) {
+    episodeContainer = document.getElementById("itemsContainer").children[idx];
+    episodeContainer.children[0].src = "https://i.ytimg.com/vi/" + videoId + "/mqdefault.jpg";
+    episodeContainer.children[0].style.visibility = "visible";
+    episodeContainer.children[1].textContent = title;
+    episodeContainer.children[2].style.display = "none";
+}
+
+function loadEpisode(idx, episode) {
+    var epXhr = new XMLHttpRequest();
+    epXhr.addEventListener("load", function() {
+        var contents = epXhr.response;
+        var lines = contents.split("\n");
+        var titleResult = lines[0].match(/title="([^"]+)"/i);
+        var title = titleResult[1];
+        var idResult = lines[0].match(/id=([^\s]+)/i);
+        var id = idResult[1];
+        updateEpisode(idx, title, id);
+    });
+    epXhr.open("GET", "http://git.handmadedev.org/api/v3/projects/36/repository/blobs/master?filepath=" + episode.filepath);
+    epXhr.setRequestHeader("Content-Type", "text/plain");
+    epXhr.send();
+}
+
+var xhr = new XMLHttpRequest();
+var episodes = [];
+
+xhr.addEventListener("load", function() {
+    var contents = JSON.parse(xhr.response);
+    for (var i = 0; i < contents.length; ++i) {
+        var episode = {
+            filename: contents[i].name.slice(0, contents[i].name.indexOf(".") + 1),
+            filepath: contents[i].path
+        }
+        episodes.push(episode);
+        renderEpisode(episode);
+        loadEpisode(i, episode);
+    }
+});
+
+xhr.open("GET", "http://git.handmadedev.org/api/v3/projects/36/repository/tree?path=projects/miotatsu/riscy");
+xhr.setRequestHeader("Content-Type", "application/json");
+xhr.send();
+</script>
+</body>
+</html>

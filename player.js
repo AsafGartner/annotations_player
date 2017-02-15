@@ -94,7 +94,7 @@ Player.prototype.jumpToNextMarker = function() {
     this.play();
 };
 
-Player.prototype.jumpToPreviousMarker = function() {
+Player.prototype.jumpToPrevMarker = function() {
     var targetMarkerIdx = Math.max(0, (this.currentMarkerIdx === null ? 0 : this.currentMarkerIdx - 1));
     var targetTime = this.markers[targetMarkerIdx].timestamp;
     this.setTime(targetTime);

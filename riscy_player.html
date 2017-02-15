@@ -1,0 +1,345 @@
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Riscy Business</title>
+<script type="text/javascript" src="player.js"></script>
+<style>
+/* USER-DEFINED */
+
+.marker .content {
+    width: 310px;
+    padding: 5px;
+    font-size: 14px;
+}
+
+.marker {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.marker:hover > .content {
+    background-color: #222;
+}
+
+.marker:hover .faded .content {
+    background-color: rgba(139, 61, 35, 0.7);
+    color: black;
+}
+
+.marker > .content {
+    background-color: #161616;
+    color: #8A877D;
+}
+
+.marker.current > .content {
+    color: #B57714;
+}
+
+.marker .progress .content {
+    background-color: #8B3D23;
+    color: black;
+}
+
+/* MANDATORY */
+
+.player_container {
+    display: flex;
+    flex-direction: row;
+}
+
+.video_container {
+    flex-grow: 1;
+    overflow: hidden;
+}
+
+.markers_container {
+    overflow-y: scroll;
+    position: relative;
+}
+
+.marker {
+    position: relative;
+    cursor: pointer;
+}
+
+.marker .content {
+    display: block;
+    box-sizing: border-box;
+    word-wrap: break-word;
+}
+
+.marker .progress {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 0px;
+    overflow: hidden;
+}
+
+/* CUSTOM PAGE STYLE */
+
+body {
+    background-color: #222;
+    font-family: sans-serif;
+    color: white;
+    margin: 0;
+    padding: 0;
+}
+
+.title {
+    display: flex;
+    flex-direction: row;
+    padding: 10px;
+    background-color: #444;
+}
+
+.title span.episode_name {
+    flex: 1 1;
+}
+
+.title span {
+    flex: 0 0;
+}
+
+.title a {
+    margin-left: 10px;
+    color: rgba(38, 139, 210, 1);
+    text-decoration: none;
+}
+
+.title a:visited {
+    color: rgba(38, 139, 210, 1);
+}
+
+.title a:hover {
+    text-decoration: underline;
+}
+
+</style>
+</head>
+<body>
+<div class="title">
+    <span class="episode_name"></span>
+    <span>Annotator:</span> <span class="annotator"></span>
+    <a href="riscy.html">All episodes</a>
+</div>
+<div class="player_container">
+    <div class="video_container"></div>
+    <div class="markers_container"></div>
+</div>
+<script>
+function getNode(parser) {
+    var result = "";
+    while(parser.pos < parser.text.length && !(parser.text[parser.pos] == "[" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\"))) {
+        parser.pos++;
+    }
+    var subnodeCount = 0;
+    var done = false;
+    while (!done) {
+        if (parser.pos < parser.text.length) {
+            result += parser.text[parser.pos];
+            if (parser.text[parser.pos] == "[" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\")) {
+                subnodeCount++;
+            }
+            if (parser.text[parser.pos] == "]" && (parser.pos == 0 || parser.text[parser.pos-1] != "\\")) {
+                subnodeCount--;
+                if (subnodeCount == 0) {
+                    done = true;
+                }
+            }
+            parser.pos++;
+        } else {
+            done = true;
+        }
+    }
+    return result.length > 0 ? result : null;
+}
+
+function isTimestamp(node) {
+    var match = node.match(/\[(\d?\d:)?\d?\d:\d\d\]/);
+    return match != null;
+}
+
+function parseTimestamp(node) {
+    var match = node.match(/\[((\d?\d):)?(\d?\d):(\d\d)\]/);
+    var hours = match[1] ? parseInt(match[1], 10) : 0;
+    var minutes = parseInt(match[3], 10);
+    var seconds = parseInt(match[4], 10);
+    return hours * 60 * 60 + minutes * 60 + seconds;
+}
+
+function isAuthor(node) {
+    var match = node.match(/\[@[^\s]+\]/);
+    return match != null;
+}
+
+function parseAuthor(node) {
+    return node.slice(2, node.length-1);
+}
+
+function parseCategories(node) {
+    var categories = [];
+
+    return categories;
+}
+
+function parseText(node) {
+    var result = {
+        text: node.slice(1, node.length-1),
+        categories: []
+    }
+    return result;
+}
+
+function getAttribute(parser) {
+    var untilQuotes = false;
+    var result = {
+        key: "",
+        value: ""
+    }
+    while (parser.pos < parser.text.length && parser.text[parser.pos].match(/\s/)) {
+        parser.pos++;
+    }
+
+    var gotKey = false;
+    var gotValue = false;
+    while (!gotKey || !gotValue) {
+        if (parser.pos < parser.text.length) {
+            if (gotKey) {
+                if (parser.text[parser.pos] == "\"") {
+                    if (untilQuotes) {
+                        gotValue = true;
+                    } else {
+                        untilQuotes = true;
+                    }
+                } else if (!untilQuotes && (parser.text[parser.pos].match(/\s/) || parser.text[parser.pos] == "]")) {
+                    gotValue = true;
+                } else {
+                    result.value += parser.text[parser.pos];
+                }
+            } else {
+                if (parser.text[parser.pos] == "=") {
+                    gotKey = true;
+                } else {
+                    result.key += parser.text[parser.pos];
+                }
+            }
+            parser.pos++;
+        } else {
+            break;
+        }
+    }
+
+    return (gotKey && gotValue) ? result : null;
+}
+
+function parseAnnotation(text) {
+    var annotation = {
+        markers: []
+    };
+
+    var parser = {
+        text: text,
+        pos: 0
+    }
+
+    var inVideo = false;
+    var currentMarker = null;
+    var currentNode = null;
+
+    while (currentNode = getNode(parser)) {
+        if (inVideo) {
+            if (currentNode == "[/video]") {
+                if (currentMarker) {
+                    annotation.markers.push(currentMarker);
+                    currentMarker = null;
+                }
+                inVideo = false;
+            } else {
+                if (isTimestamp(currentNode)) {
+                    if (currentMarker) {
+                        annotation.markers.push(currentMarker);
+                        currentMarker = null;
+                    }
+                    currentMarker = {
+                        timestamp: parseTimestamp(currentNode),
+                        categories: [],
+                        author: null,
+                        text: null
+                    };
+                } else if (isAuthor(currentNode)) {
+                    currentMarker.author = parseAuthor(currentNode);
+                } else if (currentMarker.text) {
+                    currentMarker.categories = parseCategories(currentNode);
+                } else {
+                    var textNodeResult = parseText(currentNode);
+                    currentMarker.categories.concat(textNodeResult.categories);
+                    currentMarker.text = textNodeResult.text;
+                }
+            }
+        } else {
+            if (currentNode.startsWith("[video")) {
+                var nodeParser = { text: currentNode, pos: 6 };
+                var attribute = null;
+                while (attribute = getAttribute(nodeParser)) {
+                    annotation[attribute.key] = attribute.value;
+                }
+                inVideo = true;
+            }
+        }
+    }
+    if (currentMarker) {
+        annotation.markers.push(currentMarker);
+    }
+
+    return annotation;
+}
+
+var file = location.hash;
+if (file[0] == "#") {
+    file = file.slice(1);
+}
+
+var xhr = new XMLHttpRequest();
+var riscyPlayer = null;
+
+Player.initializeYoutube();
+xhr.addEventListener("load", function() {
+    var contents = xhr.response;
+    var annotation = parseAnnotation(contents);
+    document.querySelector(".video_container").setAttribute("data-videoId", annotation.id);
+    document.querySelector(".episode_name").textContent = annotation.title;
+    document.querySelector(".annotator").textContent = annotation.annotator;
+    var markersContainer = document.querySelector(".markers_container");
+    for (var i = 0; i < annotation.markers.length; ++i) {
+        markersContainer.appendChild(Player.createHTMLMarker(annotation.markers[i].timestamp, annotation.markers[i].text));
+    }
+    riscyPlayer = new Player(document.querySelector(".player_container"));
+});
+
+xhr.open("GET", "http://git.handmadedev.org/api/v3/projects/36/repository/blobs/master?filepath=projects/miotatsu/riscy/" + file + ".hmml");
+xhr.setRequestHeader("Content-Type", "text/plain");
+xhr.send();
+
+document.addEventListener("keypress", function(ev) {
+    switch (ev.key) {
+        case "n":
+        case "d":
+        case "s": {
+            if (riscyPlayer) {
+                riscyPlayer.jumpToNextMarker();
+            }
+        } break;
+
+        case "p":
+        case "a":
+        case "w": {
+            if (riscyPlayer) {
+                riscyPlayer.jumpToPrevMarker();
+            }
+        } break;
+    }
+});
+</script>
+</body>
+</html>
