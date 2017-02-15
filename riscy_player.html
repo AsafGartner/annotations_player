@@ -317,7 +317,7 @@ xhr.addEventListener("load", function() {
     riscyPlayer = new Player(document.querySelector(".player_container"));
 });
 
-xhr.open("GET", "http://git.handmadedev.org/api/v3/projects/36/repository/blobs/master?filepath=projects/miotatsu/riscy/" + file + ".hmml");
+xhr.open("GET", "https://git.handmadedev.org/api/v3/projects/36/repository/blobs/master?filepath=projects/miotatsu/riscy/" + file + ".hmml");
 xhr.setRequestHeader("Content-Type", "text/plain");
 xhr.send();
 
