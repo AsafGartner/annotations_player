@@ -115,10 +115,16 @@ body {
 
 .title .refs_container {
     position: relative;
+    transition: box-shadow 800ms cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    box-shadow: inset 0 0 0 #B57714;
 }
 
 .title .refs_container:hover {
     background-color: #666;
+}
+
+.title .refs_container.current {
+    box-shadow: inset 0px 0px 30px #B57714;
 }
 
 .title .refs_container .mouse_catcher {
@@ -159,8 +165,17 @@ body {
     color: white;
 }
 
+.refs .ref.current {
+    background-color: #8B3D23;
+    color: black;
+}
+
 .refs .ref:hover {
     background-color: #222;
+}
+
+.refs .ref.current:hover {
+    background-color: rgba(139, 61, 35, 0.7);
 }
 
 .refs .ref:last-child {
@@ -432,7 +447,7 @@ xhr.addEventListener("load", function() {
     for (var i = 0; i < annotation.markers.length; ++i) {
         markersContainer.appendChild(Player.createHTMLMarker(annotation.markers[i].timestamp, annotation.markers[i].text, i));
     }
-    riscyPlayer = new Player(document.querySelector(".player_container"), function(ref) { console.log(ref); });
+    riscyPlayer = new Player(document.querySelector(".player_container"), onRefChanged);
 });
 
 xhr.open("GET", "https://git.handmade.network/api/v3/projects/36/repository/blobs/master?filepath=projects/miotatsu/riscy/" + file + ".hmml");
@@ -470,6 +485,35 @@ for (var i = 0; i < refTimecodes.length; ++i) {
             return false;
         }
     });
+}
+
+function onRefChanged(ref) {
+    var refMapping = {};
+    refMapping["2"] = 0;
+    refMapping["5"] = 1;
+    refMapping["10"] = 2;
+    refMapping["15"] = 3;
+    refMapping["16"] = 4;
+    refMapping["18"] = 5;
+
+    var actualRef = refMapping[ref];
+    if (actualRef !== undefined) {
+        document.querySelector(".refs_container").classList.add("current");
+        var refs = document.querySelectorAll(".refs .ref");
+        for (var i = 0; i < refs.length; ++i) {
+            if (i == actualRef) {
+                refs[i].classList.add("current");
+            } else {
+                refs[i].classList.remove("current");
+            }
+        }
+    } else {
+        document.querySelector(".refs_container").classList.remove("current");
+        var refs = document.querySelectorAll(".refs .ref");
+        for (var i = 0; i < refs.length; ++i) {
+            refs[i].classList.remove("current");
+        }
+    }
 }
 </script>
 </body>
