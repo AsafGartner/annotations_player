@@ -89,30 +89,100 @@ body {
 .title {
     display: flex;
     flex-direction: row;
-    padding: 10px;
     background-color: #444;
 }
 
-.title span.episode_name {
+.title > * {
+    padding: 10px;
+}
+
+.title .episode_name {
     flex: 1 1;
 }
 
-.title span {
-    flex: 0 0;
-}
-
-.title a {
-    margin-left: 10px;
+.title > a {
     color: rgba(38, 139, 210, 1);
     text-decoration: none;
 }
 
-.title a:visited {
+.title > a:visited {
     color: rgba(38, 139, 210, 1);
 }
 
-.title a:hover {
+.title > a:hover {
     text-decoration: underline;
+}
+
+.title .refs_container {
+    position: relative;
+}
+
+.title .refs_container:hover {
+    background-color: #666;
+}
+
+.title .refs_container .mouse_catcher {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    right: 0;
+}
+
+.title .refs_container:hover .mouse_catcher {
+    width: 300px;
+}
+
+.title .refs_container .refs {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    width: 350px;
+    background-color: black;
+    border: 3px solid #444;
+    border-top: none;
+    z-index: 1;
+    display: none;
+}
+
+.title .refs_container:hover .refs {
+    display: block;
+}
+
+.refs .ref {
+    padding: 10px;
+    border-bottom: 1px solid rgb(51, 51, 51);
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    text-decoration: none;
+    color: white;
+}
+
+.refs .ref:hover {
+    background-color: #222;
+}
+
+.refs .ref:last-child {
+    border: none;
+}
+
+.refs .ref .timecode {
+    display: inline-block;
+    min-width: 55px;
+    font-size: 12px;
+    padding-right: 10px;
+    text-align: right;
+}
+
+.refs .ref .timecode:hover .time {
+    text-decoration: underline;
+}
+
+.refs .ref .source {
+    font-size: 10px;
+    color: #888;
+    line-height: 8px;
 }
 
 </style>
@@ -120,7 +190,55 @@ body {
 <body>
 <div class="title">
     <span class="episode_name"></span>
-    <span>Annotator:</span> <span class="annotator"></span>
+    <div class="refs_container">
+        <span>References &#9660;</span>
+        <div class="mouse_catcher"></div>
+        <div class="refs">
+            <a href="http://www.charlespetzold.com/code/" target="_blank" class="ref">
+                <span data-timestamp=61 class="timecode">(<span class="time">01:01</span>)</span>
+                <span class="ref_content">
+                    <div class="source">Charles Petzold</div>
+                    <div class="ref_title">Code: The Hidden Language of Computer Hardware and Software</div>
+                </span>
+            </a>
+            <a href="https://en.wikipedia.org/wiki/Logic_gate" target="_blank" class="ref">
+                <span data-timestamp=1082 class="timecode">(<span class="time">18:02</span>)</span>
+                <span class="ref_content">
+                    <div class="source">Wikipedia</div>
+                    <div class="ref_title">Logic gate</div>
+                </span>
+            </a>
+            <a href="https://en.wikipedia.org/wiki/Adder_(electronics)" target="_blank" class="ref">
+                <span data-timestamp=2218 class="timecode">(<span class="time">36:58</span>)</span>
+                <span class="ref_content">
+                    <div class="source">Wikipedia</div>
+                    <div class="ref_title">Adder (electronics)</div>
+                </span>
+            </a>
+            <a href="https://en.wikipedia.org/wiki/Ones'_complement" target="_blank" class="ref">
+                <span data-timestamp=2886 class="timecode">(<span class="time">48:06</span>)</span>
+                <span class="ref_content">
+                    <div class="source">Wikipedia</div>
+                    <div class="ref_title">Ones' complement</div>
+                </span>
+            </a>
+            <a href="https://en.wikipedia.org/wiki/Two's_complement" target="_blank" class="ref">
+                <span data-timestamp=3268 class="timecode">(<span class="time">54:28</span>)</span>
+                <span class="ref_content">
+                    <div class="source">Wikipedia</div>
+                    <div class="ref_title">Two's complement</div>
+                </span>
+            </a>
+            <a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html" target="_blank" class="ref">
+                <span data-timestamp=3883 class="timecode">(<span class="time">01:04:43</span>)</span>
+                <span class="ref_content">
+                    <div class="source">GCC, the GNU Compiler Collection</div>
+                    <div class="ref_title">Statements and Declarations in Expressions</div>
+                </span>
+            </a>
+        </div>
+    </div>
+    <span class="annotator_container">Annotator: <span class="annotator"></span></span>
     <a href="riscy.html">All episodes</a>
 </div>
 <div class="player_container">
@@ -340,6 +458,19 @@ document.addEventListener("keypress", function(ev) {
         } break;
     }
 });
+
+var refTimecodes = document.querySelectorAll(".refs .ref .timecode");
+for (var i = 0; i < refTimecodes.length; ++i) {
+    refTimecodes[i].addEventListener("click", function(ev) {
+        if (riscyPlayer) {
+            var time = ev.currentTarget.getAttribute("data-timestamp");
+            riscyPlayer.setTime(parseInt(time, 10));
+            riscyPlayer.play();
+            ev.preventDefault();
+            return false;
+        }
+    });
+}
 </script>
 </body>
 </html>
