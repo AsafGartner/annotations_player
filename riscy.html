@@ -111,7 +111,7 @@ function loadEpisode(idx, episode) {
         var id = idResult[1];
         updateEpisode(idx, title, id);
     });
-    epXhr.open("GET", "https://git.handmadedev.org/api/v3/projects/36/repository/blobs/master?filepath=" + episode.filepath);
+    epXhr.open("GET", "https://git.handmade.network/api/v3/projects/36/repository/blobs/master?filepath=" + episode.filepath);
     epXhr.setRequestHeader("Content-Type", "text/plain");
     epXhr.send();
 }
@@ -132,7 +132,7 @@ xhr.addEventListener("load", function() {
     }
 });
 
-xhr.open("GET", "https://git.handmadedev.org/api/v3/projects/36/repository/tree?path=projects/miotatsu/riscy");
+xhr.open("GET", "https://git.handmade.network/api/v3/projects/36/repository/tree?path=projects/miotatsu/riscy");
 xhr.setRequestHeader("Content-Type", "application/json");
 xhr.send();
 </script>
