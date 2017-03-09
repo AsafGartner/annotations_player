@@ -1,14 +1,18 @@
-function Player(htmlContainer) {
+// refsCallback: (optional)
+//   Will be called when the player enters a marker that has a `data-ref` attribute. The value of `data-ref` will be passed to the function.
+//   When leaving a marker that a `data-ref` attribute, and entering a marker without one (or not entering a new marker at all), the function will be called with `null`.
+function Player(htmlContainer, refsCallback) {
     this.container = htmlContainer;
-
     this.markersContainer = this.container.querySelector(".markers_container");
     this.videoContainer = this.container.querySelector(".video_container");
+    this.refsCallback = refsCallback || function() {};
+
     if (!this.videoContainer.getAttribute("data-videoId")) {
         console.error("Expected to find data-videoId attribute on", this.videoContainer, "for player initialized on", this.container);
         throw new Error("Missing data-videoId attribute.");
     }
     this.markers = [];
-    var markerEls = this.container.querySelectorAll(".marker");
+    var markerEls = this.markersContainer.querySelectorAll(".marker");
     if (markerEls.length == 0) {
         console.error("No markers found in", this.markersContainer, "for player initialized on", this.container);
         throw new Error("Missing markers.");
@@ -16,6 +20,7 @@ function Player(htmlContainer) {
     for (var i = 0; i < markerEls.length; ++i) {
         var marker = {
             timestamp: parseInt(markerEls[i].getAttribute("data-timestamp"), 10),
+            ref: markerEls[i].getAttribute("data-ref"),
             endTime: (i < markerEls.length - 1 ? parseInt(markerEls[i+1].getAttribute("data-timestamp"), 10) : null),
             el: markerEls[i],
             fadedProgress: markerEls[i].querySelector(".progress.faded"),
@@ -133,7 +138,7 @@ Player.createHTMLSkeleton = function(videoId, markers) {
 };
 
 // timestamp can be either an int (number of seconds from beginning of the video) or a string ([hh:][mm:]ss)
-Player.createHTMLMarker = function(timestamp, text) {
+Player.createHTMLMarker = function(timestamp, text, ref) {
     if (typeof(timestamp) == "string") {
         var timeParts = timestamp.split(":");
         var hours = (timeParts.length == 3 ? parseInt(timeParts[0], 10) : 0);
@@ -144,6 +149,9 @@ Player.createHTMLMarker = function(timestamp, text) {
     var marker = document.createElement("DIV");
     marker.classList.add("marker");
     marker.setAttribute("data-timestamp", timestamp);
+    if (ref !== undefined && ref !== null) {
+        marker.setAttribute("data-ref", ref);
+    }
 
     var content = document.createElement("DIV");
     content.classList.add("content");
@@ -298,6 +306,12 @@ Player.prototype.updateProgress = function() {
             this.currentMarker.el.classList.add("current");
             this.scrollTo = this.currentMarker.el.offsetTop + this.currentMarker.el.offsetHeight/2.0;
             this.scrollPosition = this.markersContainer.scrollTop;
+        }
+
+        if (this.currentMarker && this.currentMarker.ref) {
+            this.refsCallback(this.currentMarker.ref);
+        } else if (prevMarker && prevMarker.ref) {
+            this.refsCallback(null);
         }
     }
 };

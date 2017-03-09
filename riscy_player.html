@@ -430,9 +430,9 @@ xhr.addEventListener("load", function() {
     document.querySelector(".annotator").textContent = annotation.annotator;
     var markersContainer = document.querySelector(".markers_container");
     for (var i = 0; i < annotation.markers.length; ++i) {
-        markersContainer.appendChild(Player.createHTMLMarker(annotation.markers[i].timestamp, annotation.markers[i].text));
+        markersContainer.appendChild(Player.createHTMLMarker(annotation.markers[i].timestamp, annotation.markers[i].text, i));
     }
-    riscyPlayer = new Player(document.querySelector(".player_container"));
+    riscyPlayer = new Player(document.querySelector(".player_container"), function(ref) { console.log(ref); });
 });
 
 xhr.open("GET", "https://git.handmade.network/api/v3/projects/36/repository/blobs/master?filepath=projects/miotatsu/riscy/" + file + ".hmml");
