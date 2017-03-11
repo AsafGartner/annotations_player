@@ -39,6 +39,8 @@ function Player(htmlContainer, refsCallback) {
     this.youtubePlayerReady = false;
     this.playing = false;
     this.shouldPlay = false;
+    this.buffering = false;
+    this.pauseAfterBuffer = false;
     this.speed = 1;
     this.currentTime = 0;
     this.lastFrameTime = 0;
@@ -75,6 +77,8 @@ Player.prototype.pause = function() {
     if (this.youtubePlayerReady) {
         if (this.playing) {
             this.youtubePlayer.pauseVideo();
+        } else if (this.buffering) {
+            this.pauseAfterBuffer = true;
         }
     } else {
         this.shouldPlay = false;
@@ -364,6 +368,12 @@ Player.prototype.onYoutubePlayerStateChange = function(ev) {
         this.updateProgress();
     } else {
         this.playing = false;
+    }
+
+    this.buffering = ev.data == YT.PlayerState.BUFFERING;
+    if (this.playing && this.pauseAfterBuffer) {
+        this.pauseAfterBuffering = false;
+        this.pause();
     }
 };
 
