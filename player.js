@@ -66,6 +66,7 @@ Player.prototype.play = function() {
         if (!this.playing) {
             this.youtubePlayer.playVideo();
         }
+        this.pauseAfterBuffer = false;
     } else {
         this.shouldPlay = true;
     }
