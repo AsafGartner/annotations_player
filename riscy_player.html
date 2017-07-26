@@ -156,13 +156,14 @@ body {
 }
 
 .refs .ref {
-    padding: 10px;
     border-bottom: 1px solid rgb(51, 51, 51);
     display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: stretch;
     text-decoration: none;
     color: white;
+    position: relative;
+    overflow: hidden;
 }
 
 .refs .ref.current {
@@ -183,7 +184,11 @@ body {
 }
 
 .refs .ref .timecode {
-    display: inline-block;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
     min-width: 55px;
     font-size: 12px;
     padding-right: 10px;
@@ -194,10 +199,28 @@ body {
     text-decoration: underline;
 }
 
+.refs .ref .ref_content {
+    padding: 10px 0;
+}
+
 .refs .ref .source {
     font-size: 10px;
     color: #888;
     line-height: 8px;
+}
+
+.idx {
+    position: absolute;
+    font-size: 50px;
+    top: 50%;
+    right: 10px;
+    color: rgba(255, 255, 255, 0.15);
+    transform: translate(0, -50%);
+}
+
+.time_container {
+    width: 100%;
+    text-align: right;
 }
 
 </style>
@@ -210,46 +233,52 @@ body {
         <div class="mouse_catcher"></div>
         <div class="refs">
             <a href="http://www.charlespetzold.com/code/" target="_blank" class="ref">
-                <span data-timestamp=61 class="timecode">(<span class="time">01:01</span>)</span>
+                <span data-timestamp=61 class="timecode"><span class="time_container">(<span class="time">01:01</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">Charles Petzold</div>
                     <div class="ref_title">Code: The Hidden Language of Computer Hardware and Software</div>
                 </span>
+                <span class="idx">1</span>
             </a>
             <a href="https://en.wikipedia.org/wiki/Logic_gate" target="_blank" class="ref">
-                <span data-timestamp=1082 class="timecode">(<span class="time">18:02</span>)</span>
+                <span data-timestamp=1082 class="timecode"><span class="time_container">(<span class="time">18:02</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">Wikipedia</div>
                     <div class="ref_title">Logic gate</div>
                 </span>
+                <span class="idx">2</span>
             </a>
             <a href="https://en.wikipedia.org/wiki/Adder_(electronics)" target="_blank" class="ref">
-                <span data-timestamp=2218 class="timecode">(<span class="time">36:58</span>)</span>
+                <span data-timestamp=2218 class="timecode"><span class="time_container">(<span class="time">36:58</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">Wikipedia</div>
                     <div class="ref_title">Adder (electronics)</div>
                 </span>
+                <span class="idx">3</span>
             </a>
             <a href="https://en.wikipedia.org/wiki/Ones'_complement" target="_blank" class="ref">
-                <span data-timestamp=2886 class="timecode">(<span class="time">48:06</span>)</span>
+                <span data-timestamp=2886 class="timecode"><span class="time_container">(<span class="time">48:06</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">Wikipedia</div>
                     <div class="ref_title">Ones' complement</div>
                 </span>
+                <span class="idx">4</span>
             </a>
             <a href="https://en.wikipedia.org/wiki/Two's_complement" target="_blank" class="ref">
-                <span data-timestamp=3268 class="timecode">(<span class="time">54:28</span>)</span>
+                <span data-timestamp=3268 class="timecode"><span class="time_container">(<span class="time">54:28</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">Wikipedia</div>
                     <div class="ref_title">Two's complement</div>
                 </span>
+                <span class="idx">5</span>
             </a>
             <a href="https://gcc.gnu.org/onlinedocs/gcc/Statement-Exprs.html" target="_blank" class="ref">
-                <span data-timestamp=3883 class="timecode">(<span class="time">01:04:43</span>)</span>
+                <span data-timestamp=3883 class="timecode"><span class="time_container">(<span class="time">01:04:43</span>)</span></span>
                 <span class="ref_content">
                     <div class="source">GCC, the GNU Compiler Collection</div>
                     <div class="ref_title">Statements and Declarations in Expressions</div>
                 </span>
+                <span class="idx">103</span>
             </a>
         </div>
     </div>
