@@ -43,7 +43,6 @@ function Player(htmlContainer, refsCallback) {
     this.pauseAfterBuffer = false;
     this.speed = 1;
     this.currentTime = 0;
-    this.lastFrameTime = 0;
     this.scrollTo = -1;
     this.scrollPosition = 0;
     this.nextFrame = null;
@@ -322,11 +321,8 @@ Player.prototype.updateProgress = function() {
 };
 
 Player.prototype.doFrame = function() {
-    var now = performance.now();
-    var delta = (now - this.lastFrameTime) / 1000.0;
-    this.lastFrameTime = now;
     if (this.playing) {
-        this.currentTime += delta * this.speed;
+        this.currentTime = this.youtubePlayer.getCurrentTime();
     }
     this.updateProgress();
 
