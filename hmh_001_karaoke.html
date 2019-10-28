@@ -556,53 +556,33 @@ if (hash && hash.length > 1) {
 
 annotationsFileLocation = "https://raw.githubusercontent.com/HandmadeCompanion/HandmadeCompanion/master/src/documents/videos/code/day001.html.md";
 
-if (annotationsFileLocation) {
-    var annotations = {
-        markers: []
-    };
-
-    var xhr = new XMLHttpRequest();
-    xhr.addEventListener("load", function() {
-        var contents = xhr.response;
-
-        var lines = contents.split("\n");
-        var mode = "none";
-        for (var i = 0; i < lines.length; ++i) {
-            var line = lines[i];
-            if (line == "---") {
-                mode = "none";
-            } else if (line.startsWith("title:")) {
-                annotations.title = line.slice(7).replace(/"/g, "");
-            } else if (line.startsWith("videoId:")) {
-                annotations.videoId = line.slice(9).replace(/"/g, "");
-            } else if (line.startsWith("author:")) {
-                annotations.author = line.slice(8).replace(/"/g, ""); // Miblo, where's the author field?
-            } else if (line.startsWith("markers")) {
-                mode = "markers";
-            } else if (mode == "markers") {
-                var match = line.match(/"((\d+):)?(\d+):(\d+)": "(.+)"/);
-                var marker = {
-                    totalTime: (match[2] ? parseInt(match[2], 10) : 0) * 60 * 60 + parseInt(match[3], 10) * 60 + parseInt(match[4], 10),
-                    text: match[5].replace(/\\"/g, "\"")
-                }
-                annotations.markers.push(marker);
-            }
-        }
-
-        generatePlayer(annotations);
-    });
-
-    xhr.addEventListener("error", function() {
-        document.querySelector(".playerContainer .title").innerHTML = "Could not load annotations file. <a href='index.html'>Try a different episode</a>";
-        document.querySelector(".middleContainer").style.display = "none";
-    });
-    xhr.open("GET", annotationsFileLocation);
-    xhr.setRequestHeader("Content-Type", "text/plain");
-    xhr.send();
-} else {
-    document.querySelector(".playerContainer .title").innerHTML = "<a href='index.html'>Choose an episode</a>";
-    document.querySelector(".middleContainer").style.display = "none";
+function parseTime(str) {
+    var match = str.match(/((\d+):)?(\d+):(\d+)/);
+    var time = (match[2] ? parseInt(match[2], 10) : 0) * 60 * 60 + parseInt(match[3], 10) * 60 + parseInt(match[4], 10);
+    return time;
 }
+
+var annotations = {
+    title: "Setting Up the Windows Build",
+    videoId: "Ee3EtYb8d1o",
+    markers: [
+        { totalTime: parseTime("0:46"), text: "Course of the Handmade Hero series" },
+        { totalTime: parseTime("3:04"), text: "Start the project" },
+        { totalTime: parseTime("5:06"), text: "Command line in Windows" },
+        { totalTime: parseTime("7:04"), text: "Create a virtual drive" },
+        { totalTime: parseTime("10:18"), text: "Meaning of the misc folder" },
+        { totalTime: parseTime("11:46"), text: "Create the first code file" },
+        { totalTime: parseTime("12:48"), text: "Comment header Emacs put in" },
+        { totalTime: parseTime("14:37"), text: "Minimum code you will need" },
+        { totalTime: parseTime("19:45"), text: "Configure everything for development" },
+        { totalTime: parseTime("48:40"), text: "Debug with Visual Studio" },
+        { totalTime: parseTime("53:00"), text: "Windows-specific things you should know" },
+        { totalTime: parseTime("59:04"), text: "Add something to do for the program" },
+        { totalTime: parseTime("1:02:00"), text: "Import a library" }
+    ]
+};
+
+generatePlayer(annotations);
 
 </script>
 <script type="text/javascript" src="https://www.youtube.com/iframe_api"></script>
